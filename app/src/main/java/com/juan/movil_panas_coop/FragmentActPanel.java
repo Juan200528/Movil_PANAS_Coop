@@ -1,6 +1,6 @@
 package com.juan.movil_panas_coop;
 
-import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,18 +19,17 @@ public class FragmentActPanel extends Fragment {
         // Constructor vacío requerido
     }
 
-    @SuppressLint("MissingInflatedId")
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_actipanel, container, false);
 
-        // Referenciar las tarjetas
+        // Inicializar los CardView
         cardBuscarFiltrar = view.findViewById(R.id.card_buscar_filtrar);
         cardListaActividades = view.findViewById(R.id.card_lista_actividades);
         cardPromocionadas = view.findViewById(R.id.card_actividades_promocionadas);
         cardRecordatorio = view.findViewById(R.id.card_recordatorio);
 
-        // Configurar eventos de clic
+        // Configurar clics
         cardBuscarFiltrar.setOnClickListener(v -> {
             Toast.makeText(getActivity(), "Buscar y filtrar actividades", Toast.LENGTH_SHORT).show();
             // startActivity(new Intent(getActivity(), BuscarFiltrarActivity.class));

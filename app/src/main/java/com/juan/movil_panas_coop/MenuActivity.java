@@ -8,11 +8,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.juan.movil_panas_coop.ui.actividades.ActividadesFragment;
-import com.juan.movil_panas_coop.ui.comunidades.ComunidadesFragment;
 import com.juan.movil_panas_coop.ui.perfil.PerfilFragment;
 import com.juan.movil_panas_coop.ui.principal.PrincipalFragment;
-import com.juan.movil_panas_coop.R;
 
 public class MenuActivity extends AppCompatActivity {
 
@@ -27,10 +24,10 @@ public class MenuActivity extends AppCompatActivity {
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         fabCreateActivity = findViewById(R.id.fabCreateActivity);
 
-        // Depuración: Verificar si el FAB se inicializó
+        // Verificar si el FAB se inicializó correctamente
         if (fabCreateActivity != null) {
             Log.d("MenuActivity", "FAB inicializado correctamente");
-            fabCreateActivity.setVisibility(View.VISIBLE); // Mostrar FAB inmediatamente
+            fabCreateActivity.setVisibility(View.VISIBLE);
         } else {
             Log.e("MenuActivity", "FAB es null, no se encontró en el layout");
         }
@@ -43,18 +40,19 @@ public class MenuActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment = null;
             int itemId = item.getItemId();
+
             if (itemId == R.id.nav_inicio) {
                 fragment = new PrincipalFragment();
-                fabCreateActivity.setVisibility(View.VISIBLE); // Mostrar FAB
+                fabCreateActivity.setVisibility(View.VISIBLE);
             } else if (itemId == R.id.nav_actividades) {
-                fragment = new ActividadesFragment();
-                fabCreateActivity.setVisibility(View.GONE); // Ocultar FAB
+                fragment = new FragmentActPanel(); // Cargar tu Fragmento personalizado
+                fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_comunidades) {
-                fragment = new ComunidadesFragment();
-                fabCreateActivity.setVisibility(View.GONE); // Ocultar FAB
+                fragment = new com.juan.movil_panas_coop.ui.comunidades.ComunidadesFragment();
+                fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_perfil) {
                 fragment = new PerfilFragment();
-                fabCreateActivity.setVisibility(View.GONE); // Ocultar FAB
+                fabCreateActivity.setVisibility(View.GONE);
             }
 
             if (fragment != null) {
@@ -81,7 +79,6 @@ public class MenuActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
-            // Recargar actividades si es necesario
             Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
             if (currentFragment instanceof PrincipalFragment) {
                 ((PrincipalFragment) currentFragment).cargarActividades();
