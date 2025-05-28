@@ -1,29 +1,45 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
     android:fitsSystemWindows="true">
 
-    <!-- Contenedor principal -->
-    <FrameLayout
-        android:id="@+id/fragment_container"
+    <!-- Barra superior (AppBarLayout con Toolbar) -->
+    <include layout="@layout/app_bar_menu" />
+
+    <!-- Contenedor de fragmentos -->
+    <include
+        layout="@layout/content_menu"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/bottom_navigation"/>
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <!-- Barra de navegación inferior FIJA -->
+    <!-- Barra de navegación inferior -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background= "@color/white"
+        android:layout_gravity="bottom"
         app:menu="@menu/bottom_nav_menu"
-        app:iconSize="24dp"
         app:itemIconTint="@drawable/nav_item_color"
         app:itemTextColor="@drawable/nav_item_color"
         app:labelVisibilityMode="labeled"
-        app:elevation="8dp"/>
-</RelativeLayout>
+        app:elevation="4dp" />
+
+    <!-- Botón flotante para crear actividad -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCreateActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="120dp"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="#FF0000"
+        app:tint="@android:color/white"
+        app:elevation="12dp"
+        app:pressedTranslationZ="12dp"
+        android:visibility="visible" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
