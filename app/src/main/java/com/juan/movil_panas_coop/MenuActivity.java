@@ -31,17 +31,17 @@ public class MenuActivity extends AppCompatActivity {
             Fragment fragment = null;
             switch (item.getItemId()) {
                 case R.id.nav_inicio:
-            //        fragment = new InicioFragment();
+            /*        fragment = new InicioFragment();
+                    break;*/
+               case R.id.nav_actividades:
+                    fragment = new FragmentActPanel();
                     break;
-              //  case R.id.nav_actividades:
-                    fragment = new ActividadesFragment();
-                    break;
-              //  case R.id.nav_comunidades:
+              /*  case R.id.nav_comunidades:
                     fragment = new ComunidadesFragment();
-                    break;
-               // case R.id.nav_perfil:
+                    break;*/
+               /* case R.id.nav_perfil:
                     fragment = new PerfilFragment();
-                    break;
+                    break;*/
             }
 
             if (fragment != null) {
