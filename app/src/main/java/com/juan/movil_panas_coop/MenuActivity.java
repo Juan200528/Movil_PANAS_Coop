@@ -8,8 +8,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.juan.movil_panas_coop.ui.comunidades.ComunidadesFragment;
 import com.juan.movil_panas_coop.ui.perfil.PerfilFragment;
 import com.juan.movil_panas_coop.ui.principal.PrincipalFragment;
+import com.juan.movil_panas_coop.R;
 
 public class MenuActivity extends AppCompatActivity {
 
@@ -24,7 +26,6 @@ public class MenuActivity extends AppCompatActivity {
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         fabCreateActivity = findViewById(R.id.fabCreateActivity);
 
-        // Verificar si el FAB se inicializó correctamente
         if (fabCreateActivity != null) {
             Log.d("MenuActivity", "FAB inicializado correctamente");
             fabCreateActivity.setVisibility(View.VISIBLE);
@@ -40,15 +41,14 @@ public class MenuActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment = null;
             int itemId = item.getItemId();
-
             if (itemId == R.id.nav_inicio) {
                 fragment = new PrincipalFragment();
                 fabCreateActivity.setVisibility(View.VISIBLE);
             } else if (itemId == R.id.nav_actividades) {
-                fragment = new FragmentActPanel(); // Cargar tu Fragmento personalizado
+                fragment = new FragmentActPanel(); // ← SOLO ESTE CAMBIO
                 fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_comunidades) {
-                fragment = new com.juan.movil_panas_coop.ui.comunidades.ComunidadesFragment();
+                fragment = new ComunidadesFragment();
                 fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_perfil) {
                 fragment = new PerfilFragment();
