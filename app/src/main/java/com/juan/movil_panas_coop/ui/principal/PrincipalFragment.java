@@ -38,7 +38,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     private ActividadAdapter actividadAdapter;
     private ManagerDb managerDb;
     private List<ActividadAdapter.Item> itemList;
-    private boolean isRecyclerVisible = false;
     private int userId;
     private ExecutorService executorService;
 
@@ -73,15 +72,8 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         actividadAdapter.setManagerDb(managerDb);
         recyclerActividades.setAdapter(actividadAdapter);
 
-        recyclerActividades.setVisibility(View.GONE);
-        tvEmptyActividades.setVisibility(View.GONE);
-
+        // Mostrar siempre las actividades o el mensaje de vacío, según corresponda
         cargarActividades();
-
-        tvMisActividades.setOnClickListener(v -> {
-            isRecyclerVisible = !isRecyclerVisible;
-            actualizarVisibilidad();
-        });
 
         return root;
     }
@@ -119,13 +111,9 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     }
 
     private void actualizarVisibilidad() {
-        if (isRecyclerVisible) {
-            recyclerActividades.setVisibility(itemList.isEmpty() ? View.GONE : View.VISIBLE);
-            tvEmptyActividades.setVisibility(itemList.isEmpty() ? View.VISIBLE : View.GONE);
-        } else {
-            recyclerActividades.setVisibility(View.GONE);
-            tvEmptyActividades.setVisibility(View.GONE);
-        }
+        // Mostrar siempre el RecyclerView o el mensaje de vacío, dependiendo de si hay actividades
+        recyclerActividades.setVisibility(itemList.isEmpty() ? View.GONE : View.VISIBLE);
+        tvEmptyActividades.setVisibility(itemList.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     private void mostrarDialogoEliminar(Actividad actividad) {

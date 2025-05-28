@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -30,7 +31,24 @@ public class MenuActivity extends AppCompatActivity {
         // Depuración: Verificar si el FAB se inicializó
         if (fabCreateActivity != null) {
             Log.d("MenuActivity", "FAB inicializado correctamente");
-            fabCreateActivity.setVisibility(View.VISIBLE); // Mostrar FAB inmediatamente
+
+            // Obtener el alto de la BottomNavigationView dinámicamente
+            int bottomNavHeight = bottomNavigationView.getHeight();
+            if (bottomNavHeight == 0) {
+                // Si el alto no está disponible aún, esperar a que se mida
+                bottomNavigationView.post(() -> {
+                    int height = bottomNavigationView.getHeight();
+                    CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) fabCreateActivity.getLayoutParams();
+                    params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, height + 80); // Añadir 8dp de margen adicional
+                    fabCreateActivity.setLayoutParams(params);
+                    fabCreateActivity.setVisibility(View.VISIBLE);
+                });
+            } else {
+                CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) fabCreateActivity.getLayoutParams();
+                params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, bottomNavHeight + 80); // Añadir 8dp de margen adicional
+                fabCreateActivity.setLayoutParams(params);
+                fabCreateActivity.setVisibility(View.VISIBLE);
+            }
         } else {
             Log.e("MenuActivity", "FAB es null, no se encontró en el layout");
         }
@@ -45,16 +63,16 @@ public class MenuActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_inicio) {
                 fragment = new PrincipalFragment();
-                fabCreateActivity.setVisibility(View.VISIBLE); // Mostrar FAB
+                fabCreateActivity.setVisibility(View.VISIBLE);
             } else if (itemId == R.id.nav_actividades) {
                 fragment = new ActividadesFragment();
-                fabCreateActivity.setVisibility(View.GONE); // Ocultar FAB
+                fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_comunidades) {
                 fragment = new ComunidadesFragment();
-                fabCreateActivity.setVisibility(View.GONE); // Ocultar FAB
+                fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_perfil) {
                 fragment = new PerfilFragment();
-                fabCreateActivity.setVisibility(View.GONE); // Ocultar FAB
+                fabCreateActivity.setVisibility(View.GONE);
             }
 
             if (fragment != null) {
@@ -81,7 +99,6 @@ public class MenuActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
-            // Recargar actividades si es necesario
             Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
             if (currentFragment instanceof PrincipalFragment) {
                 ((PrincipalFragment) currentFragment).cargarActividades();
