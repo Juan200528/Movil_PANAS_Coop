@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:background="@color/colorB"
+    tools:context=".Registro">
+
+    <!-- Encabezado -->
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PANASCOOP"
+        android:textColor="#064349"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginTop="60dp"/>
+
+    <TextView
+        android:id="@+id/subtitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registrate"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/colorN"/>
+
+    <!-- Espaciador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="20dp"/>
+
+    <!-- Formulario de Registro -->
+    <EditText
+        android:id="@+id/fullNameEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Nombre y apellido"
+        android:inputType="textCapWords|textPersonName"
+        android:background="@drawable/edit_text_border"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"/>
+
+    <EditText
+        android:id="@+id/emailEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Correo electronico"
+        android:inputType="textEmailAddress"
+        android:background="@drawable/edit_text_border"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"/>
+
+    <EditText
+        android:id="@+id/passwordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Contraseña"
+        android:inputType="textPassword"
+        android:background="@drawable/edit_text_border"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"/>
+
+    <EditText
+        android:id="@+id/confirmPasswordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Confirmar contraseña"
+        android:inputType="textPassword"
+        android:background="@drawable/edit_text_border"
+        android:layout_marginTop="12dp"
+        android:padding="12dp"/>
+
+    <!-- Espaciador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="20dp"/>
+
+    <!-- Botones y Enlaces -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnRegistrar"
+        android:layout_width="225dp"
+        android:layout_height="42dp"
+        android:text="Registrar"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="false"
+        android:textStyle="normal"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Enlace Iniciar Sesión -->
+    <TextView
+        android:id="@+id/loginLinkTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¿Ya tienes cuenta? Entrar"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center_horizontal"/>
+
+    <!-- Espaciador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="40dp"/>
+
+    <!-- Mensaje de Bienvenida -->
+    <TextView
+        android:id="@+id/welcomeMessageTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bienvenidos\nGracias por visitar PanasCOOP,\nRegistrate."
+        android:textAlignment="center"
+        android:gravity="center"
+        android:layout_marginTop="48dp"
+        android:textColor="@color/mensajes"
+        android:textSize="12sp"/>
+</LinearLayout>
