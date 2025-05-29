@@ -18,7 +18,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.juan.movil_panas_coop.db.ManagerDb;
 
 public class InicioSesion extends AppCompatActivity {
@@ -39,7 +41,6 @@ public class InicioSesion extends AppCompatActivity {
         btnIniciarSesion = findViewById(R.id.btnIniciarSesion);
         tvRegistro = findViewById(R.id.tvRegistro);
 
-        // Asegurar que el campo de contraseña esté oculto por defecto
         etContrasena.setTransformationMethod(PasswordTransformationMethod.getInstance());
 
         managerDb = new ManagerDb(this);
@@ -50,12 +51,10 @@ public class InicioSesion extends AppCompatActivity {
         configurarBotonIniciarSesion();
         configurarTextoRegistrate();
 
-        // Configurar ícono para mostrar/ocultar contraseña
         setupPasswordToggle(etContrasena);
 
         btnIniciarSesion.setOnClickListener(v -> iniciarSesion());
 
-        // Si viene un email de registro previo, ponerlo en el campo correo
         String emailRegistrado = getIntent().getStringExtra("email_registrado");
         if (emailRegistrado != null) {
             etCorreo.setText(emailRegistrado);
@@ -125,20 +124,17 @@ public class InicioSesion extends AppCompatActivity {
     }
 
     private void setupPasswordToggle(final EditText editText) {
-        // Establecer ícono inicial (ocultar contraseña)
         editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
         editText.setCompoundDrawablePadding(10);
 
         editText.setOnTouchListener((v, event) -> {
             if (event.getRawX() >= (editText.getRight() - editText.getCompoundDrawables()[2].getBounds().width() - editText.getCompoundDrawablePadding())) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // Mostrar contraseña
                     editText.setTransformationMethod(null);
                     editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_on, 0);
                     editText.setSelection(editText.getText().length());
                     return true;
                 } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-                    // Ocultar contraseña
                     editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
                     editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
                     editText.setSelection(editText.getText().length());
@@ -161,11 +157,15 @@ public class InicioSesion extends AppCompatActivity {
         int userId = managerDb.validarUsuario(email, password);
         if (userId != -1) {
             String nombreCompleto = managerDb.getUserNameById(userId);
+            String phone = managerDb.getUserPhoneById(userId);
+            String address = managerDb.getUserAddressById(userId);
 
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putInt("user_id", userId);
             editor.putString("user_email", email);
             editor.putString("user_name", (nombreCompleto != null && !nombreCompleto.trim().isEmpty()) ? nombreCompleto : "Usuario");
+            editor.putString("user_phone", (phone != null) ? phone : "N/A");
+            editor.putString("user_address", (address != null) ? address : "N/A");
             editor.apply();
 
             Intent intent = new Intent(this, MenuActivity.class);

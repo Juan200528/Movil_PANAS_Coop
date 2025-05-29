@@ -17,18 +17,13 @@
             android:exported="false" />
         <activity
             android:name=".MenuActivity"
-            android:exported="false" />
-
-        <!-- Pantalla de Register -->
+            android:exported="false" /> <!-- Pantalla de Register -->
         <activity
             android:name=".Registro"
-            android:exported="false" />
-
-        <!-- Pantalla de login -->
+            android:exported="false" /> <!-- Pantalla de login -->
         <activity
             android:name=".InicioSesion"
             android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="false" /> <!-- Pantalla de bienvenida -->
