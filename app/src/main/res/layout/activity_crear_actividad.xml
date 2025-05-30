@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Crear Nueva Actividad"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Título -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Título de la actividad"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#000000"/>
+
+        <EditText
+            android:id="@+id/etTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:textSize="16sp"
+            android:inputType="textCapSentences"
+            android:hint="Ingrese el título"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#808080"
+            android:padding="12dp"/>
+
+        <!-- Imagen -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Imagen de la actividad"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#000000"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="66dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- Mostrar Imagen Seleccionada -->
+            <FrameLayout
+                android:id="@+id/flImagenContenedor"
+                android:layout_width="84dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="0dp"
+                android:clipChildren="true"
+                android:clipToPadding="true">
+
+                <ImageView
+                    android:id="@+id/ivActividadImagen"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:adjustViewBounds="true"
+                    android:scaleType="centerCrop"
+                    android:background="@drawable/rounded_background"
+                    android:clipToOutline="true"
+                    android:contentDescription="Imagen de actividad"
+                    android:src="@drawable/default_image" /><!-- Imagen predeterminada -->
+            </FrameLayout>
+
+            <EditText
+                android:id="@+id/etImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:backgroundTint="#808080"
+                android:clickable="true"
+                android:focusable="false"
+                android:gravity="center"
+                android:hint="Ingresa una imagen"
+                android:padding="12dp"
+                android:paddingEnd="4dp"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btnSubir"
+                android:layout_width="77dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Seleccionar imagen"
+                android:scaleType="centerInside"
+                android:src="@drawable/subir"/>
+
+        </FrameLayout>
+
+        <!-- Descripción -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Descripción"
+            android:textSize="16sp"
+            android:layout_marginBottom="20dp"
+            android:textColor="#000000"/>
+
+        <EditText
+            android:id="@+id/etDescripcion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ingrese la descripción"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#808080"
+            android:inputType="textMultiLine|textCapSentences"
+            android:padding="12dp"
+            android:gravity="top"/>
+
+        <!-- Fecha -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fecha de la actividad"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#000000"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <EditText
+                android:id="@+id/etFecha"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:backgroundTint="#808080"
+                android:clickable="true"
+                android:focusable="false"
+                android:hint="Seleccione la fecha"
+                android:padding="12dp"
+                android:textSize="16sp"
+                android:paddingEnd="40dp"/>
+
+            <ImageButton
+                android:id="@+id/btnCalendario"
+                android:layout_width="77dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Seleccionar fecha"
+                android:scaleType="centerInside"
+                android:src="@drawable/calendario"/>
+        </FrameLayout>
+
+        <!-- Lugar -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lugar de la actividad"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#000000"/>
+
+        <EditText
+            android:id="@+id/etLugar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ingrese el lugar"
+            android:inputType="textCapSentences"
+            android:textSize="16sp"
+            android:backgroundTint="#808080"
+            android:layout_marginBottom="16dp"
+            android:padding="12dp"/>
+
+        <!-- Responsables -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Responsables de la actividad"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#000000"/>
+
+        <EditText
+            android:id="@+id/etResponsables"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:backgroundTint="#808080"
+            android:hint="Responsables, (separados por coma)"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:inputType="text"/>
+
+        <!-- Botón Crear -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnCrear"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Crear"
+            android:inputType="textCapWords|textPersonName"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"/>
+
+    </LinearLayout>
+</ScrollView>

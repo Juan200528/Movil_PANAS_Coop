@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">movil_PANAS_Coop</string>
+
+    <!--   Snackbar   -->
+    <string name="snackbar_message">Acción de ejemplo</string>
+    <string name="snackbar_action">Deshacer</string>
+    <!--   Header del Navigation Drawer   -->
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="usuario">Usuario</string>
+    <string name="nav_header_desc">Logo de la app</string>
+    <string name="nav_header_title">Nombre del Usuario</string>
+    <string name="nav_header_subtitle">correo@ejemplo.com</string>
+    <string name="profile_image">Imagen de perfil</string>
+    <string name="nombre_de_usuario">Nombre de Usuario</string>
+    <string name="perfil">Perfil</string>
+    <string name="cerrar_sesion">Cerrar Sesión</string>
+    <string name="actividades_pasadas">Actividades Pasadas</string>
 </resources>

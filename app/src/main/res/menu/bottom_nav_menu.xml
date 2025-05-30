@@ -1,23 +1,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item
         android:id="@+id/nav_inicio"
         android:icon="@drawable/ic_inicio"
         android:title="Inicio" />
-
     <item
         android:id="@+id/nav_actividades"
         android:icon="@drawable/ic_actividades"
         android:title="Actividades" />
-
     <item
         android:id="@+id/nav_comunidades"
         android:icon="@drawable/ic_comunidades"
         android:title="Comunidades" />
-
     <item
         android:id="@+id/nav_perfil"
         android:icon="@drawable/ic_perfil"
         android:title="Perfil" />
-
 </menu>
