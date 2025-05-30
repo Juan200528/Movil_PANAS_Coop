@@ -8,13 +8,19 @@ public class Constantes {
     public static final String TABLA_USUARIOS = "usuarios";
     public static final String COLUMNA_ID = "id";
     public static final String COLUMNA_NOMBRE = "nombre";
+    public static final String COLUMNA_DIRECCION = "direccion";
+
+    public static final String COLUMNA_TELEFONO = "telefono";
     public static final String COLUMNA_EMAIL = "email";
     public static final String COLUMNA_PASSWORD = "password";
     public static final String CREAR_TABLA_USUARIOS = "CREATE TABLE " + TABLA_USUARIOS + " (" +
             COLUMNA_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             COLUMNA_NOMBRE + " TEXT, " +
             COLUMNA_EMAIL + " TEXT, " +
+            COLUMNA_TELEFONO + " TEXT, " +
+            COLUMNA_DIRECCION + " TEXT, " +
             COLUMNA_PASSWORD + " TEXT)";
+
 
     // Tabla Actividades
     public static final String TABLA_ACTIVIDADES = "actividades";

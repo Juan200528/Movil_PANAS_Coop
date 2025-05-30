@@ -56,7 +56,6 @@ public class MenuActivity extends AppCompatActivity {
             loadFragment(new PrincipalFragment());
         }
 
-        bottomNavigationView.setSelectedItemId(R.id.nav_inicio);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment = null;
             int itemId = item.getItemId();
