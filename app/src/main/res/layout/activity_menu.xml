@@ -5,8 +5,11 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
+
     <!-- Barra superior (AppBarLayout con Toolbar) -->
-    <include layout="@layout/app_bar_menu" />
+    <include layout="@layout/app_bar_menu"
+        />
+
 
     <!-- Contenedor de fragmentos -->
     <include
