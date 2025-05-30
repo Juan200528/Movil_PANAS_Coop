@@ -2,8 +2,10 @@ package com.juan.movil_panas_coop.ui.actividades;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
@@ -36,6 +38,12 @@ public class FragmentActPanel extends Fragment {
         cardPromocionadas.setOnClickListener(v -> abrirFragmento(new PromocionadasFragment()));
         cardRecordatorio.setOnClickListener(v -> abrirFragmento(new RecordatorioFragment()));
 
+        // Aplicar efecto de "presión" a los LinearLayout simulando botones
+        aplicarEfectoPresion(view.findViewById(R.id.miBotton));
+        aplicarEfectoPresion(view.findViewById(R.id.miBotton2));
+        aplicarEfectoPresion(view.findViewById(R.id.miBotton3));
+        aplicarEfectoPresion(view.findViewById(R.id.miBotton4));
+
         return view;
     }
 
@@ -44,5 +52,23 @@ public class FragmentActPanel extends Fragment {
         transaction.replace(R.id.fragment_container, fragment);
         transaction.addToBackStack(null);
         transaction.commit();
+    }
+
+    // Aplica animación al presionar el "botón"
+    private void aplicarEfectoPresion(View boton) {
+        if (boton != null) {
+            boton.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start(); // Efecto "atracción"
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start(); // Volver a tamaño normal
+                        break;
+                }
+                return false; // Permitir que el evento de click aún se propague al CardView
+            });
+        }
     }
 }

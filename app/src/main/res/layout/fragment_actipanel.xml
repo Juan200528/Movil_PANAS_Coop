@@ -56,11 +56,14 @@
                 android:foreground="?android:attr/selectableItemBackground">
 
                 <LinearLayout
+                    android:id="@+id/miBotton"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:background="@drawable/bg_button_border"
+
+                    android:background="@drawable/selector_boton"
+                    android:elevation="6dp"
                     android:padding="16dp">
 
                     <ImageView
@@ -94,11 +97,14 @@
                 android:foreground="?android:attr/selectableItemBackground">
 
                 <LinearLayout
+                    android:id="@+id/miBotton2"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:background="@drawable/bg_button_border"
+
+                    android:background="@drawable/selector_boton"
+                    android:elevation="6dp"
                     android:padding="16dp">
 
                     <ImageView
@@ -132,11 +138,13 @@
                 android:foreground="?android:attr/selectableItemBackground">
 
                 <LinearLayout
+                    android:id="@+id/miBotton3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:background="@drawable/bg_button_border"
+                    android:background="@drawable/selector_boton"
+                    android:elevation="6dp"
                     android:padding="16dp">
 
                     <ImageView
@@ -172,11 +180,13 @@
                 android:foreground="?android:attr/selectableItemBackground">
 
                 <LinearLayout
+                    android:id="@+id/miBotton4"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:background="@drawable/bg_button_border"
+                    android:background="@drawable/selector_boton"
+                    android:elevation="6dp"
                     android:padding="16dp">
 
                     <ImageView
