@@ -133,7 +133,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             List<ActividadAdapter.Item> tempItemList = new ArrayList<>();
 
             if (userId != -1) {
-                // Fetch all activities for the user
+                // Fetch all non-past activities for the user
                 List<Actividad> allActividades = managerDb.obtenerActividadesPorUsuario(userId);
                 Log.d("PrincipalFragment", "Total actividades recuperadas para userId " + userId + ": " + allActividades.size());
                 for (Actividad actividad : allActividades) {
@@ -146,100 +146,22 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                             ", Promocionada: " + actividad.isPromocionada() +
                             ", Asistido: " + actividad.isAsistido() +
                             ", ImagenRuta: " + actividad.getImagenRuta());
-                }
-
-                // Manually filter non-past activities
-                List<Actividad> noPasadas = new ArrayList<>();
-                Date currentDate = new Date();
-                Log.d("PrincipalFragment", "Fecha actual: " + currentDate);
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            actividad.setPasada(false); // Por defecto, no pasada si la fecha es inválida
-                            noPasadas.add(actividad);
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        Log.d("PrincipalFragment", "Comparando - Actividad Fecha: " + actividadDate + " con Current Fecha: " + currentDate);
-                        if (actividadDate.after(currentDate) || actividadDate.equals(currentDate)) {
-                            actividad.setPasada(false); // Actualizar el estado de pasada
-                            noPasadas.add(actividad);
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                        actividad.setPasada(false); // Por defecto, no pasada si hay error
-                        noPasadas.add(actividad);
+                    if (!actividad.isPasada()) {
+                        tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
                     }
                 }
-                Log.d("PrincipalFragment", "Número de actividades no pasadas: " + noPasadas.size());
-                for (Actividad actividad : noPasadas) {
-                    Log.d("PrincipalFragment", "No pasada - Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado());
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
-                }
 
-                // Sort non-past activities by date (descending)
-                Collections.sort(noPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
-
-                // Manually filter past activities
-                List<Actividad> actividadesPasadas = new ArrayList<>();
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        if (actividadDate.before(currentDate)) {
-                            actividad.setPasada(true); // Actualizar el estado de pasada
-                            actividadesPasadas.add(actividad);
-                            Log.d("PrincipalFragment", "Actividad pasada agregada - Título: " + actividad.getTitulo() +
-                                    ", Fecha: " + actividad.getFecha());
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                    }
-                }
-                Log.d("PrincipalFragment", "Número de actividades pasadas: " + actividadesPasadas.size());
+                // Fetch past activities for the user
+                List<Actividad> actividadesPasadas = managerDb.obtenerActividadesPasadasPorUsuario(userId);
+                Log.d("PrincipalFragment", "Total actividades pasadas recuperadas para userId " + userId + ": " + actividadesPasadas.size());
                 for (Actividad actividad : actividadesPasadas) {
-                    Log.d("PrincipalFragment", "Pasada - Título: " + actividad.getTitulo() +
+                    Log.d("PrincipalFragment", "Pasada - ID: " + actividad.getId() +
+                            ", Título: " + actividad.getTitulo() +
                             ", Fecha: " + actividad.getFecha() +
                             ", idCreador: " + actividad.getIdCreador() +
                             ", isPasada: " + actividad.isPasada() +
                             ", Estado: " + actividad.getEstado());
                 }
-
-                // Sort past activities by date (descending)
-                Collections.sort(actividadesPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
 
                 // Add past activities section if there are any
                 if (!actividadesPasadas.isEmpty()) {
@@ -268,21 +190,42 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private void adjustScrollBehavior() {
         if (recyclerActividades != null && recyclerActividades.getAdapter() != null) {
-            int itemCount = recyclerActividades.getAdapter().getItemCount();
             DisplayMetrics displayMetrics = new DisplayMetrics();
             requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenHeight = displayMetrics.heightPixels;
             int navigationBarHeight = getNavigationBarHeight();
             int usableHeight = screenHeight - navigationBarHeight;
 
-            // Estimar la altura de una tarjeta (aproximadamente 150dp + márgenes/padding)
+            // Estimar la altura de los ítems
             float dpToPx = getResources().getDisplayMetrics().density;
-            int itemHeight = (int) (150 * dpToPx) + 32; // 150dp + 16dp de margen superior + 16dp de margen inferior
+            int actividadItemHeight = (int) (150 * dpToPx) + 32; // 150dp por actividad + 16dp de margen superior + 16dp de margen inferior
+            int tituloSectionHeight = (int) (40 * dpToPx) + 16; // 40dp por título de sección + 8dp de margen superior + 8dp de margen inferior
 
-            int totalHeight = itemCount * itemHeight;
+            // Calcular la altura total del contenido
+            int totalHeight = 0;
+            int actividadCount = 0;
+            int pasadasCount = 0;
+            boolean hasPasadasSection = false;
 
-            // Si hay una sola actividad y su altura es menor o igual a la altura usable, deshabilitar scroll
-            if (itemCount <= 1 && totalHeight <= usableHeight) {
+            for (ActividadAdapter.Item item : itemList) {
+                if (item.getType() == ActividadAdapter.Item.TYPE_ACTIVIDAD) {
+                    actividadCount++;
+                } else if (item.getType() == ActividadAdapter.Item.TYPE_TITULO) {
+                    totalHeight += tituloSectionHeight;
+                    hasPasadasSection = true;
+                } else if (item.getType() == ActividadAdapter.Item.TYPE_PASADAS) {
+                    List<Actividad> actividadesPasadas = item.getActividadesPasadas();
+                    if (actividadesPasadas != null) {
+                        pasadasCount = actividadesPasadas.size();
+                    }
+                }
+            }
+
+            totalHeight += actividadCount * actividadItemHeight; // Altura de actividades no pasadas
+            totalHeight += pasadasCount * actividadItemHeight; // Altura de actividades pasadas
+
+            // Si hay una sección de actividades pasadas, ajustar el comportamiento
+            if (totalHeight <= usableHeight && actividadCount <= 1 && pasadasCount <= 1 && !hasPasadasSection) {
                 recyclerActividades.setNestedScrollingEnabled(false); // Deshabilitar scroll
                 ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
                 params.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Ajustar altura al contenido
