@@ -1,5 +1,6 @@
 package com.juan.movil_panas_coop;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -123,6 +124,7 @@ public class InicioSesion extends AppCompatActivity {
         tvRegistro.setHighlightColor(Color.TRANSPARENT);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setupPasswordToggle(final EditText editText) {
         editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
         editText.setCompoundDrawablePadding(10);
