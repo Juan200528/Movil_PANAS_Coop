@@ -32,15 +32,16 @@
             <!-- Título -->
             <ImageView
                 android:id="@+id/title_toolbar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
+                android:layout_width="371dp"
+                android:layout_height="49dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="-37dp"
                 android:layout_toEndOf="@id/logo_toolbar"
-                android:layout_marginStart="12dp"
+                android:foregroundGravity="center"
                 android:src="@drawable/panas"
                 android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
         </RelativeLayout>
 

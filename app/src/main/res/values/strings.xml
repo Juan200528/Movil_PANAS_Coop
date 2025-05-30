@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">movil_PANAS_Coop</string>
+    <string name="app_name">PanasCOOP</string>
 
     <!--   Snackbar   -->
     <string name="snackbar_message">Acción de ejemplo</string>
