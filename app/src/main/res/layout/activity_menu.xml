@@ -28,7 +28,7 @@
         app:itemIconTint="@drawable/nav_item_color"
         app:itemTextColor="@drawable/nav_item_color"
         app:labelVisibilityMode="labeled"
-        app:elevation="4dp" />
+        app:elevation="4dp"/>
 
     <!-- Botón flotante para crear actividad -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

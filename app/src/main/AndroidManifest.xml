@@ -12,30 +12,37 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Movil_PANAS_Coop"
         tools:targetApi="31">
+
         <activity
             android:name=".CrearActividad"
             android:exported="false" />
+
         <activity
             android:name=".MenuActivity"
-            android:exported="false" /> <!-- Pantalla de Register -->
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />  <!-- Aquí está la clave -->
+
         <activity
             android:name=".Registro"
-            android:exported="false" /> <!-- Pantalla de login -->
+            android:exported="false" />
+
         <activity
             android:name=".InicioSesion"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
-            android:exported="false" /> <!-- Pantalla de bienvenida -->
+            android:exported="false" />
+
         <activity
             android:name=".PantallaPrincipal"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
