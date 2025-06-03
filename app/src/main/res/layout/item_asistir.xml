@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="#DDDDDD"
+    android:layout_margin="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvTituloActividadAsistir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:hint="Título de la actividad"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnConfig"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="120dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Configuración"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/config" />
+            </LinearLayout>
+
+            <!-- Imagen de la actividad -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="10dp"
+                android:clipChildren="true"
+                android:clipToPadding="true">
+
+                <ImageView
+                    android:id="@+id/ivActividadImagenAsistir"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/rounded_background"
+                    android:clipToOutline="true"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Imagen de actividad"
+                    android:scaleType="centerCrop" />
+            </LinearLayout>
+
+            <!-- Contenedor de botones principales y acciones -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Botones principales -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnVerDetalles"
+                        android:layout_width="120dp"
+                        android:layout_height="match_parent"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="Ver Detalles"
+                        android:textColor="@android:color/white"
+                        app:backgroundTint="#22C55E" />
+
+                    <Button
+                        android:id="@+id/btnCancelarAsistencia"
+                        android:layout_width="151dp"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="Cancelar Asistencia"
+                        android:textColor="@android:color/white"
+                        app:backgroundTint="#FF3D00" />
+                </LinearLayout>
+
+                <!-- Botones de acción (compartir) -->
+                <ImageButton
+                    android:id="@+id/btnCompartir"
+                    android:layout_width="34dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Compartir"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/compartir" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
