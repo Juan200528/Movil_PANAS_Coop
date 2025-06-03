@@ -1,4 +1,4 @@
-package com.juan.movil_panas_coop.model;
+package com.juan.movil_panas_coop.models;
 
 import android.app.Dialog;
 import android.net.Uri;

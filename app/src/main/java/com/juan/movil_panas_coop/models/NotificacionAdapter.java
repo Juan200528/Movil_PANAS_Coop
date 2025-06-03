@@ -1,4 +1,4 @@
-package com.juan.movil_panas_coop.model;
+package com.juan.movil_panas_coop.models;
 
 import android.view.LayoutInflater;
 import android.view.View;

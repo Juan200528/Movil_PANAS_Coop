@@ -6,9 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.juan.movil_panas_coop.model.Actividad;
-import com.juan.movil_panas_coop.model.Asistente;
-import com.juan.movil_panas_coop.model.Notificacion;
+import com.juan.movil_panas_coop.models.Actividad;
+import com.juan.movil_panas_coop.models.Asistente;
+import com.juan.movil_panas_coop.models.Notificacion;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -36,6 +36,8 @@ public class ManagerDb {
         }
         dbHelper.close();
     }
+
+
 
 
     public String getUserNameById(int userId) {

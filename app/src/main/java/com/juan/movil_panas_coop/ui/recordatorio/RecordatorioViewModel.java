@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.model.Notificacion;
+import com.juan.movil_panas_coop.models.Notificacion;
 import java.util.List;
 
 public class RecordatorioViewModel extends AndroidViewModel {

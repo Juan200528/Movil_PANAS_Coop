@@ -1,9 +1,7 @@
 package com.juan.movil_panas_coop.ui.perfil;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,22 +16,26 @@ import androidx.fragment.app.Fragment;
 
 import com.juan.movil_panas_coop.InicioSesion;
 import com.juan.movil_panas_coop.R;
+import com.juan.movil_panas_coop.api.ApiService;
+import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.db.ManagerDb;
+import com.juan.movil_panas_coop.utils.SessionManager;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PerfilFragment extends Fragment {
 
-    private EditText editName;
-    private EditText editEmail, editPhone, editAddress;
-    private LinearLayout btnEditProfile;
+    private EditText editName, editEmail, editPhone, editAddress;
+    private LinearLayout btnEditProfile, btnLogout;
     private Button btnSaveChanges;
-    private LinearLayout btnLogout;
-    private SharedPreferences prefs;
+    private SessionManager sessionManager;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_profile, container, false);
 
-        // Referencias a vistas
         editName = view.findViewById(R.id.editName);
         editEmail = view.findViewById(R.id.editEmail);
         editPhone = view.findViewById(R.id.editPhone);
@@ -42,26 +44,31 @@ public class PerfilFragment extends Fragment {
         btnSaveChanges = view.findViewById(R.id.btnSaveChanges);
         btnLogout = view.findViewById(R.id.btnLogout);
 
-        // SharedPreferences
-        prefs = requireActivity().getSharedPreferences("user_prefs", requireActivity().MODE_PRIVATE);
+        sessionManager = new SessionManager(requireContext());
 
-        // Cargar datos iniciales
         cargarDatos();
-        setCamposEditable(false); // Campos no editables al inicio
+        setCamposEditable(false);
 
-        // Acción: Editar perfil
         btnEditProfile.setOnClickListener(v -> {
             setCamposEditable(true);
             btnEditProfile.setVisibility(View.GONE);
             btnSaveChanges.setVisibility(View.VISIBLE);
         });
 
-        // Acción: Guardar cambios
         btnSaveChanges.setOnClickListener(v -> {
             if (!validarCampos()) return;
 
-            int userId = prefs.getInt("user_id", -1);
-            if (userId != -1) {
+            String userIdStr = sessionManager.getUserId();
+            if (userIdStr != null && !userIdStr.isEmpty()) {
+                int userId;
+                try {
+                    String cleaned = userIdStr.replaceAll("[^0-9]", "");
+                    userId = Integer.parseInt(cleaned);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(requireContext(), "ID inválido", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 ManagerDb managerDb = new ManagerDb(requireContext());
                 boolean actualizado = managerDb.actualizarUsuario(
                         userId,
@@ -73,6 +80,7 @@ public class PerfilFragment extends Fragment {
 
                 if (actualizado) {
                     guardarDatos();
+                    cargarDatos();  // actualizar UI con nuevos datos
                     setCamposEditable(false);
                     btnSaveChanges.setVisibility(View.GONE);
                     btnEditProfile.setVisibility(View.VISIBLE);
@@ -81,30 +89,30 @@ public class PerfilFragment extends Fragment {
                     Toast.makeText(requireContext(), "Error al actualizar los datos", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(requireContext(), "ID de usuario no válido", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "ID de usuario no disponible", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Acción: Cerrar sesión con confirmación
         btnLogout.setOnClickListener(v -> mostrarDialogoLogout());
 
         return view;
     }
 
     private void cargarDatos() {
-        editName.setText(prefs.getString("user_name", "Jane Cooper"));
-        editEmail.setText(prefs.getString("user_email", "jane@example.com"));
-        editPhone.setText(prefs.getString("user_phone", "N/A"));
-        editAddress.setText(prefs.getString("user_address", "N/A"));
+        editName.setText(sessionManager.getUsername());
+        editEmail.setText(sessionManager.getEmail());
+        editPhone.setText(sessionManager.getPhone());
+        editAddress.setText(sessionManager.getAddress());
     }
 
     private void guardarDatos() {
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString("user_name", editName.getText().toString().trim());
-        editor.putString("user_email", editEmail.getText().toString().trim());
-        editor.putString("user_phone", editPhone.getText().toString().trim());
-        editor.putString("user_address", editAddress.getText().toString().trim());
-        editor.apply();
+        sessionManager.guardarSesion(
+                sessionManager.getUserId(),
+                editName.getText().toString().trim(),
+                editEmail.getText().toString().trim(),
+                editPhone.getText().toString().trim()
+        );
+        sessionManager.guardarAddress(editAddress.getText().toString().trim());
     }
 
     private void setCamposEditable(boolean editable) {
@@ -135,9 +143,15 @@ public class PerfilFragment extends Fragment {
     }
 
     private void cerrarSesion() {
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
-        editor.apply();
+        ApiService apiService = RetrofitClient.getApiService();
+        apiService.logout().enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) { }
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) { }
+        });
+
+        sessionManager.cerrarSesion();
 
         Intent intent = new Intent(requireActivity(), InicioSesion.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
