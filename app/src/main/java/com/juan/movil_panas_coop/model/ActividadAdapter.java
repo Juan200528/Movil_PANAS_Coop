@@ -216,14 +216,21 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             PasadasViewHolder pasadasHolder = (PasadasViewHolder) holder;
             List<Actividad> actividadesPasadas = item.getActividadesPasadas();
 
-            ActividadAdapter pasadasAdapter = new ActividadAdapter(
-                    actividadesPasadas.stream()
-                            .map(a -> new Item(Item.TYPE_ACTIVIDAD, a, null, null))
-                            .collect(Collectors.toList()),
-                    clickListener, eliminarListener, editarListener, detallesListener);
-            pasadasAdapter.setManagerDb(managerDb);
-            pasadasHolder.recyclerActividadesPasadas.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext()));
-            pasadasHolder.recyclerActividadesPasadas.setAdapter(pasadasAdapter);
+            if (actividadesPasadas != null && !actividadesPasadas.isEmpty()) {
+                ActividadAdapter pasadasAdapter = new ActividadAdapter(
+                        actividadesPasadas.stream()
+                                .map(a -> new Item(Item.TYPE_ACTIVIDAD, a, null, null))
+                                .collect(Collectors.toList()),
+                        clickListener, eliminarListener, editarListener, detallesListener);
+                pasadasAdapter.setManagerDb(managerDb);
+                LinearLayoutManager layoutManager = new LinearLayoutManager(holder.itemView.getContext());
+                pasadasHolder.recyclerActividadesPasadas.setLayoutManager(layoutManager);
+                pasadasHolder.recyclerActividadesPasadas.setHasFixedSize(true); // Optimizar
+                pasadasHolder.recyclerActividadesPasadas.setNestedScrollingEnabled(true); // Habilitar scroll anidado
+                pasadasHolder.recyclerActividadesPasadas.setAdapter(pasadasAdapter);
+            } else {
+                pasadasHolder.recyclerActividadesPasadas.setVisibility(View.GONE);
+            }
         }
     }
 

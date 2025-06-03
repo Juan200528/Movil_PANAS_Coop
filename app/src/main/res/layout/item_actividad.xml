@@ -4,11 +4,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="4dp"
-    app:strokeWidth="2dp"
-    app:strokeColor="#DDDDDD"
-    android:layout_margin="8dp">
+    android:layout_marginStart="2dp"
+    android:layout_marginEnd="2dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -44,7 +45,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:thumbTint="@color/switch_thumb_color"
-                android:trackTint="@color/switch_track_color"/>
+                android:trackTint="@color/switch_track_color" />
 
         </LinearLayout>
 
@@ -59,9 +60,9 @@
                 android:id="@+id/ivActividadImagen"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:adjustViewBounds="true"
                 android:background="@drawable/rounded_background"
                 android:clipToOutline="true"
-                android:adjustViewBounds="true"
                 android:contentDescription="Imagen de actividad"
                 android:scaleType="centerCrop" />
         </LinearLayout>
@@ -90,7 +91,7 @@
                 android:id="@+id/layoutAsistentes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="12dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
@@ -125,7 +126,7 @@
                 android:id="@+id/btnCompartir"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="1dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Compartir"
                 android:src="@drawable/compartir" />
@@ -134,7 +135,7 @@
                 android:id="@+id/btnEditar"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="1dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Editar"
                 android:src="@drawable/editar" />
@@ -143,6 +144,7 @@
                 android:id="@+id/btnEliminar"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:layout_marginRight="24dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Eliminar"
                 android:src="@drawable/eliminar" />
