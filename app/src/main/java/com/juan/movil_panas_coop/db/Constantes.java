@@ -2,7 +2,7 @@ package com.juan.movil_panas_coop.db;
 
 public class Constantes {
     public static final String DATABASE_NAME = "panascoop_db";
-    public static final int DATABASE_VERSION = 1; // Incrementado por nuevas columnas en notificacion
+    public static final int DATABASE_VERSION = 7; // Incrementado por nuevas columnas en notificacion
 
     // Tabla Usuarios
     public static final String TABLA_USUARIOS = "usuarios";

@@ -48,9 +48,9 @@ import java.util.Locale;
 
 public class CrearActividad extends AppCompatActivity {
     private static final String TAG = "CrearActividad";
-    private static final int TARGET_WIDTH_DP = 84; // Ancho fijo del contenedor
-    private static final int TARGET_HEIGHT_DP = 56; // Alto fijo del contenedor
-    private static final int IMAGE_RADIUS_DP = 16; // Radio de redondeo
+    private static final int TARGET_WIDTH_DP = 250;
+    private static final int TARGET_HEIGHT_DP = 250;
+    private static final int IMAGE_RADIUS_DP = 16;
     private static final int REQUEST_CODE_PERMISSIONS = 1001;
 
     private EditText etTitulo, etDescripcion, etFecha, etLugar, etResponsables, etImage;
@@ -106,8 +106,14 @@ public class CrearActividad extends AppCompatActivity {
 
     private void configurarBaseDatos() {
         managerDb = new ManagerDb(this);
-        managerDb.open(); // Abrir conexión a base de datos
+        managerDb.open();
         sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        int userId = sharedPreferences.getInt("user_id", -1);
+        Log.d(TAG, "User ID in CrearActividad: " + userId);
+        if (userId == -1) {
+            Log.e(TAG, "ERROR: user_id is -1 in SharedPreferences. Check login flow.");
+            Toast.makeText(this, "Error: No se encontró el ID de usuario. Verifique el inicio de sesión.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void configurarImagePicker() {
@@ -119,8 +125,9 @@ public class CrearActividad extends AppCompatActivity {
                         try {
                             Bitmap processedBitmap = procesarImagen(imageUri);
                             ivActividadImagen.setImageBitmap(processedBitmap);
+                            btnSubir.setVisibility(View.GONE);
                             imagenRuta = saveOriginalImage(imageUri);
-                            etImage.setText("Imagen seleccionada ✅");
+                            etImage.setText(" ");
                         } catch (Exception e) {
                             Log.e(TAG, "Error al procesar imagen: ", e);
                             Toast.makeText(this, "Error al procesar la imagen", Toast.LENGTH_SHORT).show();
@@ -134,7 +141,6 @@ public class CrearActividad extends AppCompatActivity {
         etFecha.setOnClickListener(v -> mostrarCalendario());
         btnSubir.setOnClickListener(v -> seleccionarImagen());
 
-        // Configurar botón "Crear" con gradiente
         GradientDrawable gradientDrawableNormal = new GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 new int[]{Color.parseColor("#03683E"), Color.parseColor("#064349")});
@@ -162,6 +168,7 @@ public class CrearActividad extends AppCompatActivity {
         options.inJustDecodeBounds = true;
         try (InputStream is = getContentResolver().openInputStream(imageUri)) {
             BitmapFactory.decodeStream(is, null, options);
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         }
 
         int targetWidth = dpToPx(TARGET_WIDTH_DP);
@@ -173,8 +180,16 @@ public class CrearActividad extends AppCompatActivity {
             Bitmap bitmapOriginal = BitmapFactory.decodeStream(is, null, options);
             if (bitmapOriginal == null) return null;
 
-            Bitmap scaledBitmap = escalarAlCentro(bitmapOriginal, targetWidth, targetHeight);
-            return aplicarMascaraRedondeada(scaledBitmap, targetWidth, targetHeight);
+            float scale = Math.max((float) targetWidth / bitmapOriginal.getWidth(), (float) targetHeight / bitmapOriginal.getHeight());
+            int newWidth = (int) (bitmapOriginal.getWidth() * scale);
+            int newHeight = (int) (bitmapOriginal.getHeight() * scale);
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmapOriginal, newWidth, newHeight, true);
+
+            int left = (newWidth - targetWidth) / 2;
+            int top = (newHeight - targetHeight) / 2;
+            Bitmap croppedBitmap = Bitmap.createBitmap(scaledBitmap, left, top, targetWidth, targetHeight);
+
+            return aplicarMascaraRedondeada(croppedBitmap, targetWidth, targetHeight);
         }
     }
 
@@ -188,24 +203,6 @@ public class CrearActividad extends AppCompatActivity {
         }
 
         return inSampleSize;
-    }
-
-    private Bitmap escalarAlCentro(Bitmap original, int targetWidth, int targetHeight) {
-        float srcAspect = (float) original.getWidth() / original.getHeight();
-        float dstAspect = (float) targetWidth / targetHeight;
-
-        Rect srcRect = new Rect();
-        if (srcAspect > dstAspect) {
-            int srcWidth = (int) (original.getHeight() * dstAspect);
-            int left = (original.getWidth() - srcWidth) / 2;
-            srcRect.set(left, 0, left + srcWidth, original.getHeight());
-        } else {
-            int srcHeight = (int) (original.getWidth() / dstAspect);
-            int top = (original.getHeight() - srcHeight) / 2;
-            srcRect.set(0, top, original.getWidth(), top + srcHeight);
-        }
-
-        return Bitmap.createBitmap(original, srcRect.left, srcRect.top, srcRect.width(), srcRect.height());
     }
 
     private Bitmap aplicarMascaraRedondeada(Bitmap bitmap, int ancho, int alto) {
@@ -266,6 +263,7 @@ public class CrearActividad extends AppCompatActivity {
             Date fechaSeleccionada = formatoFecha.parse(etFecha.getText().toString().trim());
             Date fechaActual = new Date();
 
+            Log.d(TAG, "Fecha seleccionada: " + fechaSeleccionada + ", Fecha actual: " + fechaActual);
             if (fechaSeleccionada.before(fechaActual)) {
                 Toast.makeText(this, "La fecha no puede ser anterior a hoy", Toast.LENGTH_SHORT).show();
                 return;
@@ -281,16 +279,39 @@ public class CrearActividad extends AppCompatActivity {
         actividad.setFecha(etFecha.getText().toString().trim());
         actividad.setLugar(etLugar.getText().toString().trim());
         actividad.setResponsables(etResponsables.getText().toString().trim());
-        actividad.setIdCreador(sharedPreferences.getInt("user_id", -1));
+        int creatorId = sharedPreferences.getInt("user_id", -1);
+        actividad.setIdCreador(creatorId);
         actividad.setEstado("activo");
         actividad.setImagenRuta(imagenRuta != null ? imagenRuta : "");
+        actividad.setPasada(false);
+        actividad.setPromocionada(false);
+        actividad.setAsistido(false);
+
+        Log.d(TAG, "Guardando actividad - Título: " + actividad.getTitulo() +
+                ", Fecha: " + actividad.getFecha() +
+                ", idCreador: " + actividad.getIdCreador() +
+                ", Estado: " + actividad.getEstado() +
+                ", isPasada: " + actividad.isPasada() +
+                ", Promocionada: " + actividad.isPromocionada() +
+                ", Asistido: " + actividad.isAsistido() +
+                ", ImagenRuta: " + actividad.getImagenRuta());
+
+        if (creatorId == -1) {
+            Log.e(TAG, "ERROR: idCreador is -1. Activity will not be associated with any user.");
+            Toast.makeText(this, "Error: ID de usuario no válido. Verifique el inicio de sesión.", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         long resultado = managerDb.insertarActividad(actividad);
+        Log.d(TAG, "Resultado de inserción: " + resultado);
         if (resultado != -1) {
+            actividad.setId((int) resultado); // Set the ID returned by the database
+            Log.d(TAG, "Actividad insertada con ID: " + actividad.getId());
             Toast.makeText(this, "Actividad creada exitosamente", Toast.LENGTH_SHORT).show();
             setResult(RESULT_OK);
             finish();
         } else {
+            Log.e(TAG, "Fallo al insertar la actividad en la base de datos.");
             Toast.makeText(this, "Error al crear la actividad", Toast.LENGTH_SHORT).show();
         }
     }
