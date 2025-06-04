@@ -1,4 +1,4 @@
-package com.juan.movil_panas_coop.model;
+package com.juan.movil_panas_coop.models;
 
 public class Actividad {
     private int id;

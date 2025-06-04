@@ -21,7 +21,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -35,7 +34,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.model.Actividad;
+import com.juan.movil_panas_coop.models.Actividad;
 
 import java.io.File;
 import java.io.FileOutputStream;

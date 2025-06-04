@@ -1,34 +1,29 @@
 package com.juan.movil_panas_coop;
 
 import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
-import android.text.SpannableString;
-import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.method.LinkMovementMethod;
-import android.text.method.PasswordTransformationMethod;
-import android.text.style.ClickableSpan;
-import android.text.style.ForegroundColorSpan;
-import android.view.MotionEvent;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import com.juan.movil_panas_coop.db.ManagerDb;
+
+import com.juan.movil_panas_coop.R;
+import com.juan.movil_panas_coop.api.ApiService;
+import com.juan.movil_panas_coop.model.User;
+import com.juan.movil_panas_coop.model.LoginResponse;
+import com.juan.movil_panas_coop.utils.SessionManager;
+import com.juan.movil_panas_coop.api.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class Registro extends AppCompatActivity {
-
     private EditText fullNameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
     private Button btnRegistrar;
-    private TextView loginLinkTextView;
-    private ManagerDb managerDb;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,114 +36,10 @@ public class Registro extends AppCompatActivity {
         passwordEditText = findViewById(R.id.passwordEditText);
         confirmPasswordEditText = findViewById(R.id.confirmPasswordEditText);
         btnRegistrar = findViewById(R.id.btnRegistrar);
-        loginLinkTextView = findViewById(R.id.loginLinkTextView);
 
-        // Asegurar que los campos de contraseña estén ocultos por defecto
-        passwordEditText.setTransformationMethod(PasswordTransformationMethod.getInstance());
-        confirmPasswordEditText.setTransformationMethod(PasswordTransformationMethod.getInstance());
-
-        // Limpiar cualquier fondo predeterminado
-        btnRegistrar.setBackground(null);
-
-        // Crear GradientDrawable para el estado normal (degradado)
-        GradientDrawable gradientDrawableNormal = new GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                new int[] { Color.parseColor("#03683E"), Color.parseColor("#064349") });
-        gradientDrawableNormal.setCornerRadius(80f);
-
-        // Crear GradientDrawable para el estado presionado (color sólido)
-        GradientDrawable gradientDrawablePressed = new GradientDrawable();
-        gradientDrawablePressed.setColor(Color.parseColor("#063449"));
-        gradientDrawablePressed.setCornerRadius(80f);
-
-        // Configurar StateListDrawable para los estados del botón
-        StateListDrawable stateListDrawable = new StateListDrawable();
-        stateListDrawable.addState(new int[] { android.R.attr.state_pressed }, gradientDrawablePressed);
-        stateListDrawable.addState(new int[] {}, gradientDrawableNormal);
-
-        // Aplicar el StateListDrawable al botón de Registrar
-        btnRegistrar.setBackground(stateListDrawable);
-
-        // Configurar texto con dos colores
-        String fullText = "¿Ya tienes cuenta? Entrar";
-        SpannableString spannableString = new SpannableString(fullText);
-
-        // Color texto normal (#064349)
-        spannableString.setSpan(
-                new ForegroundColorSpan(Color.parseColor("#064349")),
-                0, 18, // Desde el inicio hasta antes de "Entrar"
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-
-        // Color para "Entrar" (#39B1E0)
-        spannableString.setSpan(
-                new ForegroundColorSpan(Color.parseColor("#39B1E0")),
-                18, fullText.length(), // Desde "Entrar" hasta el final
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-
-        // Hacer "Entrar" clickable
-        ClickableSpan clickableSpan = new ClickableSpan() {
-            @Override
-            public void onClick(View widget) {
-                Intent intent = new Intent(Registro.this, InicioSesion.class);
-                startActivity(intent);
-                finish();
-            }
-
-            @Override
-            public void updateDrawState(android.text.TextPaint ds) {
-                super.updateDrawState(ds);
-                ds.setColor(Color.parseColor("#39B1E0")); // Forzar color #39B1E0
-                ds.setUnderlineText(false); // Quitar subrayado
-            }
-        };
-
-        spannableString.setSpan(
-                clickableSpan,
-                18, fullText.length(),
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        );
-
-        // Configurar TextView para evitar color de enlace predeterminado
-        loginLinkTextView.setText(spannableString);
-        loginLinkTextView.setMovementMethod(LinkMovementMethod.getInstance());
-        loginLinkTextView.setHighlightColor(Color.TRANSPARENT); // Evitar resaltado de enlace
-
-        // Inicializar ManagerDb
-        managerDb = new ManagerDb(this);
-        managerDb.open();
-
-        // Configurar íconos para mostrar/ocultar contraseña
-        setupPasswordToggle(passwordEditText);
-        setupPasswordToggle(confirmPasswordEditText);
+        sessionManager = new SessionManager(this);
 
         btnRegistrar.setOnClickListener(v -> registrarUsuario());
-    }
-
-    private void setupPasswordToggle(final EditText editText) {
-        // Establecer ícono inicial (ocultar contraseña)
-        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
-        editText.setCompoundDrawablePadding(10);
-
-        editText.setOnTouchListener((v, event) -> {
-            if (event.getRawX() >= (editText.getRight() - editText.getCompoundDrawables()[2].getBounds().width() - editText.getCompoundDrawablePadding())) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // Mostrar contraseña
-                    editText.setTransformationMethod(null);
-                    editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_on, 0);
-                    editText.setSelection(editText.getText().length());
-                    return true;
-                } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-                    // Ocultar contraseña
-                    editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                    editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
-                    editText.setSelection(editText.getText().length());
-                    return true;
-                }
-            }
-            return false;
-        });
     }
 
     private void registrarUsuario() {
@@ -194,32 +85,50 @@ public class Registro extends AppCompatActivity {
             return;
         }
 
-        // Verificar si el email ya está registrado
-        if (managerDb.existeEmail(email)) {
-            emailEditText.setError("Este correo ya está registrado");
-            emailEditText.requestFocus();
-            return;
-        }
+        // Crear objeto User para enviar al servidor
+        User user = new User();
+        user.setUsername(nombreCompleto);
+        user.setEmail(email);
+        user.setPassword(password);
 
-        // Registrar usuario en la base de datos
-        long id = managerDb.insertarUsuario(nombreCompleto, email, password);
+        // Llamada al API
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<LoginResponse> call = apiService.register(user);
 
-        if (id != -1) {
-            Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show();
+        call.enqueue(new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    LoginResponse loginResponse = response.body();
 
-            // Pasar el email a la actividad de inicio de sesión
-            Intent intent = new Intent(Registro.this, InicioSesion.class);
-            intent.putExtra("email_registrado", email);
-            startActivity(intent);
-            finish();
-        } else {
-            Toast.makeText(this, "Error en el registro", Toast.LENGTH_SHORT).show();
-        }
-    }
+                    // Guardar sesión
+                    sessionManager.guardarSesion(
+                            loginResponse.getId(),
+                            loginResponse.getUsername(),
+                            loginResponse.getEmail(),
+                            loginResponse.getToken()
+                    );
 
-    @Override
-    protected void onDestroy() {
-        managerDb.close();
-        super.onDestroy();
+                    // Redirigir al menú principal
+                    Intent intent = new Intent(Registro.this, MenuActivity.class);
+                    startActivity(intent);
+                    finish();
+
+                    Toast.makeText(Registro.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
+                } else {
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Error desconocido";
+                        Toast.makeText(Registro.this, "Error en el registro: " + errorBody, Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(Registro.this, "Error en el registro", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                Toast.makeText(Registro.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

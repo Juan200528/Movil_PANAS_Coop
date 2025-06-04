@@ -125,7 +125,7 @@
                 android:id="@+id/btnCompartir"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Compartir"
                 android:src="@drawable/compartir" />
@@ -134,7 +134,7 @@
                 android:id="@+id/btnEditar"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Editar"
                 android:src="@drawable/editar" />
@@ -143,6 +143,7 @@
                 android:id="@+id/btnEliminar"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:layout_marginEnd="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Eliminar"
                 android:src="@drawable/eliminar" />

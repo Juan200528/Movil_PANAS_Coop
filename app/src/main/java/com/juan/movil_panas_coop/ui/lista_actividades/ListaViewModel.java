@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.model.Actividad;
+import com.juan.movil_panas_coop.models.Actividad;
 import java.util.List;
 
 public class ListaViewModel extends ViewModel {

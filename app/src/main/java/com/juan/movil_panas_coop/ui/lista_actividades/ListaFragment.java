@@ -19,9 +19,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.model.Actividad;
-import com.juan.movil_panas_coop.model.ActividadAdapterLista;
-import com.juan.movil_panas_coop.model.Asistente;
+import com.juan.movil_panas_coop.models.Actividad;
+import com.juan.movil_panas_coop.models.ActividadAdapterLista;
+import com.juan.movil_panas_coop.models.Asistente;
 import java.util.ArrayList;
 import java.util.List;
 
