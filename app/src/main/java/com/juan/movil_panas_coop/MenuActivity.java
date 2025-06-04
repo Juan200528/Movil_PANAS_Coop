@@ -66,6 +66,7 @@ public class MenuActivity extends AppCompatActivity {
                 fragment = new FragmentActPanel();
                 fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_comunidades) {
+                // Sigue cargando ComunidadesFragment
                 fragment = new ComunidadesFragment();
                 fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_perfil) {

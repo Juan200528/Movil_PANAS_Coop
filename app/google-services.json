@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1013162670006",
+    "project_id": "panascoop-688e8",
+    "storage_bucket": "panascoop-688e8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013162670006:android:a36ed0d4eff04e7890b317",
+        "android_client_info": {
+          "package_name": "com.juan.movil_panas_coop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_Bse6F1dDFe_aSaxIXjZogGchAvZE30M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
