@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+
+    <!-- Capa principal del botón -->
+    <item>
+        <shape android:shape="rectangle">
+            <stroke android:width="2dp" android:color="#002326" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+</layer-list>

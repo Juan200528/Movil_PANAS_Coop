@@ -9,11 +9,10 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.juan.movil_panas_coop.ui.actividades.ActividadesFragment;
+import com.juan.movil_panas_coop.ui.actividades.FragmentActPanel;
 import com.juan.movil_panas_coop.ui.comunidades.ComunidadesFragment;
 import com.juan.movil_panas_coop.ui.perfil.PerfilFragment;
 import com.juan.movil_panas_coop.ui.principal.PrincipalFragment;
-import com.juan.movil_panas_coop.R;
 
 public class MenuActivity extends AppCompatActivity {
 
@@ -57,7 +56,6 @@ public class MenuActivity extends AppCompatActivity {
             loadFragment(new PrincipalFragment());
         }
 
-        bottomNavigationView.setSelectedItemId(R.id.nav_inicio);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment = null;
             int itemId = item.getItemId();
@@ -65,7 +63,7 @@ public class MenuActivity extends AppCompatActivity {
                 fragment = new PrincipalFragment();
                 fabCreateActivity.setVisibility(View.VISIBLE);
             } else if (itemId == R.id.nav_actividades) {
-                fragment = new ActividadesFragment();
+                fragment = new FragmentActPanel();
                 fabCreateActivity.setVisibility(View.GONE);
             } else if (itemId == R.id.nav_comunidades) {
                 fragment = new ComunidadesFragment();

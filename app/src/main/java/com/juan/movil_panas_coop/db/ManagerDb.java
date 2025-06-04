@@ -42,6 +42,7 @@ public class ManagerDb {
         dbHelper.close();
     }
 
+
     public String getUserNameById(int userId) {
         Cursor cursor = database.query(Constantes.TABLA_USUARIOS, new String[]{Constantes.COLUMNA_NOMBRE},
                 Constantes.COLUMNA_ID + "=?", new String[]{String.valueOf(userId)}, null, null, null);
@@ -55,6 +56,53 @@ public class ManagerDb {
         }
         return null;
     }
+    // Método para obtener teléfono
+    public String getUserPhoneById(int userId) {
+        String telefono = null;
+        Cursor cursor = database.query(
+                "usuarios", new String[]{"telefono"},
+                "id = ?", new String[]{String.valueOf(userId)},
+                null, null, null
+        );
+        if (cursor != null && cursor.moveToFirst()) {
+            telefono = cursor.getString(cursor.getColumnIndexOrThrow("telefono"));
+            cursor.close();
+        }
+        return telefono;
+    }
+
+    // Método para obtener dirección
+    public String getUserAddressById(int userId) {
+        String direccion = null;
+        Cursor cursor = database.query(
+                "usuarios", new String[]{"direccion"},
+                "id = ?", new String[]{String.valueOf(userId)},
+                null, null, null
+        );
+        if (cursor != null && cursor.moveToFirst()) {
+            direccion = cursor.getString(cursor.getColumnIndexOrThrow("direccion"));
+            cursor.close();
+        }
+        return direccion;
+    }
+    public boolean actualizarUsuario(int id, String nombre, String email, String telefono, String direccion) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues valores = new ContentValues();
+        valores.put(Constantes.COLUMNA_NOMBRE, nombre);
+        valores.put(Constantes.COLUMNA_EMAIL, email);
+        valores.put(Constantes.COLUMNA_TELEFONO, telefono);
+        valores.put(Constantes.COLUMNA_DIRECCION, direccion);
+
+        String whereClause = Constantes.COLUMNA_ID + " = ?";
+        String[] whereArgs = { String.valueOf(id) };
+
+        int filasActualizadas = db.update(Constantes.TABLA_USUARIOS, valores, whereClause, whereArgs);
+        db.close();
+
+        return filasActualizadas > 0;
+    }
+
 
     public String[] obtenerDatosUsuarioPorId(int userId) {
         Cursor cursor = database.query(Constantes.TABLA_USUARIOS,

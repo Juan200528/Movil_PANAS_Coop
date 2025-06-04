@@ -1,0 +1,25 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="20dp" android:orientation="vertical">
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center">
+        <TextView android:layout_width="wrap_content" android:layout_height="match_parent" android:text="Configuración de Notificaciones" android:textSize="22sp" android:textStyle="bold"/>
+    </LinearLayout>
+    <!--  Tarjeta de actividad  -->
+    <com.google.android.material.card.MaterialCardView android:id="@+id/main" android:layout_width="match_parent" android:layout_height="wrap_content" app:cardCornerRadius="16dp" app:cardElevation="4dp" app:strokeWidth="1dp" app:strokeColor="#DDDDDD" android:layout_margin="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="26dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingStart="24dp" android:paddingEnd="24dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Actividad Seleccionada" android:textColor="#000000" android:textSize="16sp"/>
+                <EditText android:id="@+id/etTituloActividad" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="8dp" android:hint="Nombre de la actividad" android:background="@drawable/edit_text_border" android:padding="12dp" android:spinnerMode="dropdown"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="Tiempo de Anticipación (días)" android:textColor="#000000" android:textSize="16sp"/>
+                <EditText android:id="@+id/etDiasActividad" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="8dp" android:background="@drawable/edit_text_border" android:hint="Ingrese el número de días" android:inputType="number" android:padding="12dp"/>
+            </LinearLayout>
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#DDDDDD"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                <Button android:id="@+id/btnGuardarConfig" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Guardar Configuración" android:textColor="@android:color/white" app:backgroundTint="#03683E"/>
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:padding="3dp">
+        <TextView android:id="@+id/tvListaActividad" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Próximas Actividades" android:textSize="22sp"/>
+    </LinearLayout>
+    <!--  Contenedor para las tarjetas de actividad  -->
+    <LinearLayout android:id="@+id/containerConfig" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_margin="4dp"/>
+</LinearLayout>
