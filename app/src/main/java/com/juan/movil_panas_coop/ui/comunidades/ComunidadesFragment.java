@@ -1,5 +1,7 @@
 package com.juan.movil_panas_coop.ui.comunidades;
 
+import static com.google.api.ChangeType.REMOVED;
+
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

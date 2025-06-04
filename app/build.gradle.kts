@@ -39,12 +39,21 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.navigation.runtime.android)
     implementation(libs.firebase.inappmessaging)
+
+    // Firebase BoM para manejar versiones de Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+
+    // Firebase Auth y Firestore, sin versión (la BoM las controla)
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation ("com.squareup.okhttp3:okhttp:4.9.1")
-    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    implementation ("com.google.code.gson:gson:2.8.8")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    implementation("com.google.code.gson:gson:2.8.8")
 }
