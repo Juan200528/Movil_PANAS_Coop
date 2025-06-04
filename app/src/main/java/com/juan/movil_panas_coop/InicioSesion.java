@@ -3,6 +3,7 @@ package com.juan.movil_panas_coop;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -21,6 +22,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class InicioSesion extends AppCompatActivity {
+
     private EditText etCorreo, etContrasena;
     private Button btnIniciarSesion;
     private TextView tvRegistrarse;
@@ -32,6 +34,9 @@ public class InicioSesion extends AppCompatActivity {
         setContentView(R.layout.activity_inicio_sesion);
 
         sessionManager = new SessionManager(this);
+        RetrofitClient.init(getApplicationContext()); // Inicializa Retrofit con interceptor y sesión
+
+        // Si ya hay sesión activa, ir directo al menú principal
         if (sessionManager.isLoggedIn()) {
             redirigirAMenu();
             return;
@@ -44,9 +49,8 @@ public class InicioSesion extends AppCompatActivity {
 
         btnIniciarSesion.setOnClickListener(v -> iniciarSesion());
 
-        // Navegar a la pantalla de registro
         tvRegistrarse.setOnClickListener(v -> {
-            Intent intent = new Intent(InicioSesion.this, Registro.class); // Asegúrate de tener esta actividad
+            Intent intent = new Intent(InicioSesion.this, Registro.class);
             startActivity(intent);
         });
     }
@@ -61,7 +65,7 @@ public class InicioSesion extends AppCompatActivity {
             return;
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etCorreo.setError("Ingrese un correo válido");
             etCorreo.requestFocus();
             return;
@@ -86,25 +90,46 @@ public class InicioSesion extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     LoginResponse loginResponse = response.body();
 
-                    Toast.makeText(InicioSesion.this, "ID de usuario: " + loginResponse.getId(), Toast.LENGTH_SHORT).show();
+                    // Extraer token de la cookie "set-cookie"
+                    String tokenCookie = null;
+                    for (int i = 0; i < response.headers().size(); i++) {
+                        String name = response.headers().name(i);
+                        String value = response.headers().value(i);
+                        if (name.equalsIgnoreCase("set-cookie") && value.contains("token=")) {
+                            int start = value.indexOf("token=") + 6;
+                            int end = value.indexOf(';', start);
+                            tokenCookie = (end > start) ? value.substring(start, end) : value.substring(start);
+                            break;
+                        }
+                    }
 
+                    if (tokenCookie == null || tokenCookie.isEmpty()) {
+                        Toast.makeText(InicioSesion.this, "No se recibió token de autenticación", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Guardar token y datos de sesión
+                    sessionManager.guardarToken(tokenCookie);
                     sessionManager.guardarSesion(
-                            loginResponse.getId(),              // ID como String
+                            String.valueOf(loginResponse.getId()),
                             loginResponse.getUsername(),
                             loginResponse.getEmail(),
-                            "N/A"                               // Puedes cambiar esto si tienes teléfono
+                            "N/A"  // Si tienes teléfono, cambiar aquí
                     );
-                    sessionManager.guardarToken(loginResponse.getToken());
 
-                    redirigirAMenu();
                     Toast.makeText(InicioSesion.this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show();
+                    redirigirAMenu();
+
                 } else {
+                    String mensaje = "Credenciales incorrectas";
                     try {
-                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Credenciales incorrectas";
-                        Toast.makeText(InicioSesion.this, "Error: " + errorBody, Toast.LENGTH_SHORT).show();
+                        if (response.errorBody() != null) {
+                            mensaje = response.errorBody().string();
+                        }
                     } catch (Exception e) {
-                        Toast.makeText(InicioSesion.this, "Error en el inicio de sesión", Toast.LENGTH_SHORT).show();
+                        mensaje = "Error procesando la respuesta del servidor";
                     }
+                    Toast.makeText(InicioSesion.this, "Error: " + mensaje, Toast.LENGTH_SHORT).show();
                 }
             }
 

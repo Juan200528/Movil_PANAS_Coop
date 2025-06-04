@@ -3,24 +3,25 @@ package com.juan.movil_panas_coop;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.api.ApiService;
-import com.juan.movil_panas_coop.model.User;
-import com.juan.movil_panas_coop.model.LoginResponse;
-import com.juan.movil_panas_coop.utils.SessionManager;
 import com.juan.movil_panas_coop.api.RetrofitClient;
+import com.juan.movil_panas_coop.model.LoginResponse;
+import com.juan.movil_panas_coop.model.User;
+import com.juan.movil_panas_coop.utils.SessionManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class Registro extends AppCompatActivity {
+
     private EditText fullNameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
     private Button btnRegistrar;
     private SessionManager sessionManager;
@@ -30,7 +31,9 @@ public class Registro extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registro);
 
-        // Inicializar vistas
+        // Inicializar RetrofitClient con contexto para que apiService no sea null
+        RetrofitClient.init(getApplicationContext());
+
         fullNameEditText = findViewById(R.id.fullNameEditText);
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
@@ -61,7 +64,7 @@ public class Registro extends AppCompatActivity {
             return;
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             emailEditText.setError("Ingrese un correo válido");
             emailEditText.requestFocus();
             return;
@@ -85,13 +88,11 @@ public class Registro extends AppCompatActivity {
             return;
         }
 
-        // Crear objeto User para enviar al servidor
         User user = new User();
         user.setUsername(nombreCompleto);
         user.setEmail(email);
         user.setPassword(password);
 
-        // Llamada al API
         ApiService apiService = RetrofitClient.getApiService();
         Call<LoginResponse> call = apiService.register(user);
 
@@ -101,20 +102,39 @@ public class Registro extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     LoginResponse loginResponse = response.body();
 
-                    // Guardar sesión
+                    // Extraer token de la cookie
+                    String tokenCookie = null;
+                    for (int i = 0; i < response.headers().size(); i++) {
+                        String name = response.headers().name(i);
+                        String value = response.headers().value(i);
+                        if (name.equalsIgnoreCase("set-cookie") && value.contains("token=")) {
+                            int start = value.indexOf("token=") + 6;
+                            int end = value.indexOf(';', start);
+                            tokenCookie = (end > start) ? value.substring(start, end) : value.substring(start);
+                            break;
+                        }
+                    }
+
+                    if (tokenCookie != null) {
+                        sessionManager.guardarToken(tokenCookie);
+                    } else {
+                        Toast.makeText(Registro.this, "No se recibió token de autenticación", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     sessionManager.guardarSesion(
-                            loginResponse.getId(),
+                            String.valueOf(loginResponse.getId()),
                             loginResponse.getUsername(),
                             loginResponse.getEmail(),
-                            loginResponse.getToken()
+                            "N/A"
                     );
 
-                    // Redirigir al menú principal
+                    Toast.makeText(Registro.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
+
                     Intent intent = new Intent(Registro.this, MenuActivity.class);
                     startActivity(intent);
                     finish();
 
-                    Toast.makeText(Registro.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
                 } else {
                     try {
                         String errorBody = response.errorBody() != null ? response.errorBody().string() : "Error desconocido";

@@ -1,12 +1,28 @@
 package com.juan.movil_panas_coop.model;
 
-public class LoginResponse {
-    private String id;
-    private String username;
-    private String email;
-    private String token;
+import com.google.gson.annotations.SerializedName;
 
-    // Getters y setters
+public class LoginResponse {
+
+    @SerializedName("id")
+    private String id;  // Cambiado a String
+
+    @SerializedName("username")
+    private String username;
+
+    @SerializedName("email")
+    private String email;
+
+    @SerializedName("telefono")
+    private String phone;
+
+    @SerializedName("direccion")
+    private String address;
+
+    // No incluyo token aquí porque viene por cookie
+
+    // --- Getters y Setters ---
+
     public String getId() {
         return id;
     }
@@ -18,6 +34,7 @@ public class LoginResponse {
     public String getUsername() {
         return username;
     }
+
     public void setUsername(String username) {
         this.username = username;
     }
@@ -25,14 +42,24 @@ public class LoginResponse {
     public String getEmail() {
         return email;
     }
+
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public String getToken() {
-        return token;
+    public String getPhone() {
+        return phone;
     }
-    public void setToken(String token) {
-        this.token = token;
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

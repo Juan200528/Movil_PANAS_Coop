@@ -20,10 +20,10 @@ public class DbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 1) {
-            db.execSQL("DROP TABLE IF EXISTS " + Constantes.TABLA_ASISTENTE);
-            db.execSQL(Constantes.CREAR_TABLA_ASISTENTE);
-            db.execSQL("DROP TABLE IF EXISTS asistir");
-        }
+        db.execSQL("DROP TABLE IF EXISTS " + Constantes.TABLA_USUARIOS);
+        db.execSQL("DROP TABLE IF EXISTS " + Constantes.TABLA_ACTIVIDADES);
+        db.execSQL("DROP TABLE IF EXISTS " + Constantes.TABLA_ASISTENTE);
+        db.execSQL("DROP TABLE IF EXISTS " + Constantes.TABLA_NOTIFICACION);
+        onCreate(db);
     }
 }

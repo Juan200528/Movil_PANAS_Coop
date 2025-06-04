@@ -3,6 +3,7 @@ package com.juan.movil_panas_coop.ui.perfil;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,8 @@ public class PerfilFragment extends Fragment {
     private Button btnSaveChanges;
     private SessionManager sessionManager;
 
+    private static final String TAG = "PerfilFragment";
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_profile, container, false);
@@ -55,43 +58,7 @@ public class PerfilFragment extends Fragment {
             btnSaveChanges.setVisibility(View.VISIBLE);
         });
 
-        btnSaveChanges.setOnClickListener(v -> {
-            if (!validarCampos()) return;
-
-            String userIdStr = sessionManager.getUserId();
-            if (userIdStr != null && !userIdStr.isEmpty()) {
-                int userId;
-                try {
-                    String cleaned = userIdStr.replaceAll("[^0-9]", "");
-                    userId = Integer.parseInt(cleaned);
-                } catch (NumberFormatException e) {
-                    Toast.makeText(requireContext(), "ID inválido", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                ManagerDb managerDb = new ManagerDb(requireContext());
-                boolean actualizado = managerDb.actualizarUsuario(
-                        userId,
-                        editName.getText().toString().trim(),
-                        editEmail.getText().toString().trim(),
-                        editPhone.getText().toString().trim(),
-                        editAddress.getText().toString().trim()
-                );
-
-                if (actualizado) {
-                    guardarDatos();
-                    cargarDatos();  // actualizar UI con nuevos datos
-                    setCamposEditable(false);
-                    btnSaveChanges.setVisibility(View.GONE);
-                    btnEditProfile.setVisibility(View.VISIBLE);
-                    Toast.makeText(requireContext(), "Datos actualizados correctamente", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(requireContext(), "Error al actualizar los datos", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(requireContext(), "ID de usuario no disponible", Toast.LENGTH_SHORT).show();
-            }
-        });
+        btnSaveChanges.setOnClickListener(v -> actualizarDatos());
 
         btnLogout.setOnClickListener(v -> mostrarDialogoLogout());
 
@@ -123,14 +90,54 @@ public class PerfilFragment extends Fragment {
     }
 
     private boolean validarCampos() {
-        if (editName.getText().toString().trim().isEmpty() ||
-                editEmail.getText().toString().trim().isEmpty() ||
-                editPhone.getText().toString().trim().isEmpty() ||
-                editAddress.getText().toString().trim().isEmpty()) {
+        return !editName.getText().toString().trim().isEmpty()
+                && !editEmail.getText().toString().trim().isEmpty()
+                && !editPhone.getText().toString().trim().isEmpty()
+                && !editAddress.getText().toString().trim().isEmpty();
+    }
+
+    private void actualizarDatos() {
+        if (!validarCampos()) {
             Toast.makeText(requireContext(), "Todos los campos deben estar completos", Toast.LENGTH_SHORT).show();
-            return false;
+            return;
         }
-        return true;
+
+        String userIdStr = sessionManager.getUserId();
+
+        if (userIdStr != null && !userIdStr.trim().isEmpty()) {
+            try {
+                int userId = Integer.parseInt(userIdStr);
+
+                Log.d(TAG, "ID del usuario obtenido: " + userId);
+
+                ManagerDb managerDb = new ManagerDb(requireContext());
+                boolean actualizado = managerDb.actualizarUsuario(
+                        userId,
+                        editName.getText().toString().trim(),
+                        editEmail.getText().toString().trim(),
+                        editPhone.getText().toString().trim(),
+                        editAddress.getText().toString().trim()
+                );
+
+                if (actualizado) {
+                    guardarDatos();
+                    cargarDatos();
+                    setCamposEditable(false);
+                    btnSaveChanges.setVisibility(View.GONE);
+                    btnEditProfile.setVisibility(View.VISIBLE);
+                    Toast.makeText(requireContext(), "Datos actualizados correctamente", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Error al actualizar los datos", Toast.LENGTH_SHORT).show();
+                }
+
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "ID inválido: " + userIdStr, e);
+                Toast.makeText(requireContext(), "ID de usuario inválido", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Log.e(TAG, "ID de usuario no disponible en la sesión");
+            Toast.makeText(requireContext(), "ID de usuario no disponible", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void mostrarDialogoLogout() {
@@ -146,9 +153,14 @@ public class PerfilFragment extends Fragment {
         ApiService apiService = RetrofitClient.getApiService();
         apiService.logout().enqueue(new Callback<Void>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) { }
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                Log.d(TAG, "Logout API llamado. Código: " + response.code());
+            }
+
             @Override
-            public void onFailure(Call<Void> call, Throwable t) { }
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e(TAG, "Fallo al llamar logout API: " + t.getMessage());
+            }
         });
 
         sessionManager.cerrarSesion();

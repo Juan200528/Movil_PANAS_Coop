@@ -20,7 +20,55 @@
             android:textStyle="bold"
             android:textColor="#000000"
             android:gravity="center"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="20dp"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <!-- Mostrar Imagen Seleccionada -->
+            <FrameLayout
+                android:id="@+id/flImagenContenedor"
+                android:layout_width="match_parent"
+                android:layout_height="238dp"
+                android:layout_marginTop="0dp"
+                android:clipChildren="true"
+                android:clipToPadding="true">
+
+                <ImageView
+                    android:id="@+id/ivActividadImagen"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/rounded_background"
+                    android:clipToOutline="true"
+                    android:contentDescription="Imagen de actividad"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/default_image" />
+            </FrameLayout>
+
+            <EditText
+                android:id="@+id/etImage"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:backgroundTint="#808080"
+                android:clickable="true"
+                android:focusable="false"
+                android:gravity="center"
+                android:padding="22dp"
+                android:textSize="16sp"/>
+
+            <ImageButton
+                android:id="@+id/btnSubir"
+                android:layout_width="77dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Seleccionar imagen"
+                android:scaleType="centerInside"
+                android:src="@drawable/subir"/>
+        </FrameLayout>
 
         <!-- Título -->
         <TextView
@@ -41,67 +89,6 @@
             android:layout_marginBottom="16dp"
             android:backgroundTint="#808080"
             android:padding="12dp"/>
-
-        <!-- Imagen -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Imagen de la actividad"
-            android:textSize="16sp"
-            android:layout_marginBottom="4dp"
-            android:textColor="#000000"/>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="66dp"
-            android:layout_marginBottom="16dp">
-
-            <!-- Mostrar Imagen Seleccionada -->
-            <FrameLayout
-                android:id="@+id/flImagenContenedor"
-                android:layout_width="84dp"
-                android:layout_height="56dp"
-                android:layout_marginTop="0dp"
-                android:clipChildren="true"
-                android:clipToPadding="true">
-
-                <ImageView
-                    android:id="@+id/ivActividadImagen"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:adjustViewBounds="true"
-                    android:scaleType="centerCrop"
-                    android:background="@drawable/rounded_background"
-                    android:clipToOutline="true"
-                    android:contentDescription="Imagen de actividad"
-                    android:src="@drawable/default_image" /><!-- Imagen predeterminada -->
-            </FrameLayout>
-
-            <EditText
-                android:id="@+id/etImage"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:backgroundTint="#808080"
-                android:clickable="true"
-                android:focusable="false"
-                android:gravity="center"
-                android:hint="Ingresa una imagen"
-                android:padding="12dp"
-                android:paddingEnd="4dp"
-                android:textSize="16sp" />
-
-            <ImageButton
-                android:id="@+id/btnSubir"
-                android:layout_width="77dp"
-                android:layout_height="24dp"
-                android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="12dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Seleccionar imagen"
-                android:scaleType="centerInside"
-                android:src="@drawable/subir"/>
-
-        </FrameLayout>
 
         <!-- Descripción -->
         <TextView
@@ -199,7 +186,8 @@
             android:hint="Responsables, (separados por coma)"
             android:textSize="16sp"
             android:padding="12dp"
-            android:inputType="text"/>
+            android:inputType="text"
+            android:layout_marginBottom="20dp"/>
 
         <!-- Botón Crear -->
         <androidx.appcompat.widget.AppCompatButton

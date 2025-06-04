@@ -5,72 +5,82 @@ import android.content.SharedPreferences;
 
 public class SessionManager {
 
-    private static final String PREF_NAME = "session_prefs";
-    private static final String KEY_USER_ID = "userId";
+    private static final String PREF_NAME = "user_session";
+    private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USERNAME = "username";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_PHONE = "phone";
-    private static final String KEY_ADDRESS = "address";
-    private static final String KEY_IS_LOGGED_IN = "is_logged_in";
-    private static final String KEY_TOKEN = "token";
+    private static final String KEY_ADDRESS = "address"; // Nueva clave
+    private static final String KEY_LOGGED_IN = "logged_in";
+    private static final String KEY_TOKEN = "auth_token";
 
-    private final SharedPreferences preferences;
-    private final SharedPreferences.Editor editor;
+    private final SharedPreferences sharedPreferences;
 
     public SessionManager(Context context) {
-        preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        editor = preferences.edit();
+        sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
     }
 
-    public void guardarSesion(String userId, String username, String email, String phone) {
-        editor.putString(KEY_USER_ID, userId);
+    // Guardar los datos de sesión
+    public void guardarSesion(String id, String username, String email, String phone) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(KEY_USER_ID, id);
         editor.putString(KEY_USERNAME, username);
         editor.putString(KEY_EMAIL, email);
         editor.putString(KEY_PHONE, phone);
-        editor.putBoolean(KEY_IS_LOGGED_IN, true);
+        editor.putBoolean(KEY_LOGGED_IN, true);
         editor.apply();
     }
 
+    // Guardar dirección (por separado)
     public void guardarAddress(String address) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_ADDRESS, address);
         editor.apply();
     }
 
+    // Obtener dirección
+    public String getAddress() {
+        return sharedPreferences.getString(KEY_ADDRESS, "");
+    }
+
+    // Guardar el token de sesión (cookie)
     public void guardarToken(String token) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_TOKEN, token);
         editor.apply();
     }
 
+    // Obtener el token guardado
     public String getToken() {
-        return preferences.getString(KEY_TOKEN, null);
+        return sharedPreferences.getString(KEY_TOKEN, null);
     }
 
+    // Verificar si el usuario ha iniciado sesión
+    public boolean isLoggedIn() {
+        return sharedPreferences.getBoolean(KEY_LOGGED_IN, false);
+    }
+
+    // Cerrar sesión limpiando todas las preferencias
+    public void cerrarSesion() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+    }
+
+    // Getters para los datos guardados
     public String getUserId() {
-        return preferences.getString(KEY_USER_ID, null);
+        return sharedPreferences.getString(KEY_USER_ID, null);
     }
 
     public String getUsername() {
-        return preferences.getString(KEY_USERNAME, "");
+        return sharedPreferences.getString(KEY_USERNAME, null);
     }
 
     public String getEmail() {
-        return preferences.getString(KEY_EMAIL, "");
+        return sharedPreferences.getString(KEY_EMAIL, null);
     }
 
     public String getPhone() {
-        return preferences.getString(KEY_PHONE, "");
-    }
-
-    public String getAddress() {
-        return preferences.getString(KEY_ADDRESS, "");
-    }
-
-    public boolean isLoggedIn() {
-        return preferences.getBoolean(KEY_IS_LOGGED_IN, false);
-    }
-
-    public void cerrarSesion() {
-        editor.clear();
-        editor.apply();
+        return sharedPreferences.getString(KEY_PHONE, null);
     }
 }

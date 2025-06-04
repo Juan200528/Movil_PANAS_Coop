@@ -1,10 +1,10 @@
 package com.juan.movil_panas_coop.ui.principal;
 
 import android.app.Dialog;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,17 +16,26 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearSnapHelper;
+import androidx.recyclerview.widget.SnapHelper;
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.models.Actividad;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
 import com.juan.movil_panas_coop.db.ManagerDb;
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -45,7 +54,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         PrincipalViewModel viewModel = new ViewModelProvider(this).get(PrincipalViewModel.class);
-        executorService = Executors.newSingleThreadExecutor(); // Executor para operaciones en segundo plano
+        executorService = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -56,62 +65,238 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         tvMisActividades = root.findViewById(R.id.tvMisActividades);
         tvEmptyActividades = root.findViewById(R.id.tvEmptyActividades);
 
-        tvMisActividades.setTextColor(Color.parseColor("#0865FE"));
-        tvMisActividades.setPaintFlags(tvMisActividades.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-
         managerDb = new ManagerDb(getContext());
         managerDb.open();
 
         userId = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE)
                 .getInt("user_id", -1);
+        Log.d("PrincipalFragment", "User ID in PrincipalFragment: " + userId);
+        if (userId == -1) {
+            Log.e("PrincipalFragment", "ERROR: user_id is -1 in SharedPreferences. Check login flow.");
+            Toast.makeText(getContext(), "Error: No se encontró el ID de usuario. Verifique el inicio de sesión.", Toast.LENGTH_LONG).show();
+        }
 
-        recyclerActividades.setLayoutManager(new LinearLayoutManager(getContext()));
+        // Configurar el LinearLayoutManager
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        recyclerActividades.setLayoutManager(layoutManager);
+        recyclerActividades.setHasFixedSize(true); // Optimizar con tamaño fijo
+
+        // Agregar SnapHelper para alinear las tarjetas completamente
+        SnapHelper snapHelper = new LinearSnapHelper();
+        snapHelper.attachToRecyclerView(recyclerActividades);
+
+        // Ajustar el margen inferior para evitar superposición con la barra de navegación
+        adjustRecyclerViewMargin();
+
         itemList = new ArrayList<>();
         actividadAdapter = new ActividadAdapter(itemList, this, this::mostrarDialogoEliminar,
                 this::mostrarDialogoEditar, this::mostrarDialogoDetalles);
         actividadAdapter.setManagerDb(managerDb);
         recyclerActividades.setAdapter(actividadAdapter);
 
-        // Mostrar siempre las actividades o el mensaje de vacío, según corresponda
         cargarActividades();
 
         return root;
     }
 
+    private void adjustRecyclerViewMargin() {
+        if (recyclerActividades != null) {
+            // Obtener la altura de la barra de navegación
+            int navigationBarHeight = getNavigationBarHeight();
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) recyclerActividades.getLayoutParams();
+            params.bottomMargin = navigationBarHeight + 150; // Mantener el margen inferior ajustado a 150
+            recyclerActividades.setLayoutParams(params);
+
+            // Asegurar que el RecyclerView no se corte por la barra de navegación
+            ViewCompat.setOnApplyWindowInsetsListener(recyclerActividades, (v, insets) -> {
+                int insetBottom = insets.getSystemWindowInsetBottom();
+                if (insetBottom > 0) {
+                    params.bottomMargin = insetBottom + 150;
+                    recyclerActividades.setLayoutParams(params);
+                }
+                return insets.consumeSystemWindowInsets();
+            });
+        }
+    }
+
+    private int getNavigationBarHeight() {
+        DisplayMetrics metrics = new DisplayMetrics();
+        requireActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int usableHeight = metrics.heightPixels;
+        requireActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int realHeight = metrics.heightPixels;
+        return realHeight > usableHeight ? realHeight - usableHeight : 0;
+    }
+
     public void cargarActividades() {
-        // Ejecutar operaciones de base de datos en un hilo secundario
         executorService.execute(() -> {
             List<ActividadAdapter.Item> tempItemList = new ArrayList<>();
 
             if (userId != -1) {
-                List<Actividad> noPasadas = managerDb.obtenerActividadesPorUsuario(userId);
+                // Fetch all activities for the user
+                List<Actividad> allActividades = managerDb.obtenerActividadesPorUsuario(userId);
+                Log.d("PrincipalFragment", "Total actividades recuperadas para userId " + userId + ": " + allActividades.size());
+                for (Actividad actividad : allActividades) {
+                    Log.d("PrincipalFragment", "Actividad - ID: " + actividad.getId() +
+                            ", Título: " + actividad.getTitulo() +
+                            ", Fecha: " + actividad.getFecha() +
+                            ", idCreador: " + actividad.getIdCreador() +
+                            ", isPasada: " + actividad.isPasada() +
+                            ", Estado: " + actividad.getEstado() +
+                            ", Promocionada: " + actividad.isPromocionada() +
+                            ", Asistido: " + actividad.isAsistido() +
+                            ", ImagenRuta: " + actividad.getImagenRuta());
+                }
+
+                // Manually filter non-past activities
+                List<Actividad> noPasadas = new ArrayList<>();
+                Date currentDate = new Date();
+                Log.d("PrincipalFragment", "Fecha actual: " + currentDate);
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                for (Actividad actividad : allActividades) {
+                    try {
+                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
+                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
+                            actividad.setPasada(false); // Por defecto, no pasada si la fecha es inválida
+                            noPasadas.add(actividad);
+                            continue;
+                        }
+                        Date actividadDate = sdf.parse(actividad.getFecha());
+                        Log.d("PrincipalFragment", "Comparando - Actividad Fecha: " + actividadDate + " con Current Fecha: " + currentDate);
+                        if (actividadDate.after(currentDate) || actividadDate.equals(currentDate)) {
+                            actividad.setPasada(false); // Actualizar el estado de pasada
+                            noPasadas.add(actividad);
+                        }
+                    } catch (ParseException e) {
+                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
+                        actividad.setPasada(false); // Por defecto, no pasada si hay error
+                        noPasadas.add(actividad);
+                    }
+                }
+                Log.d("PrincipalFragment", "Número de actividades no pasadas: " + noPasadas.size());
                 for (Actividad actividad : noPasadas) {
-                    Log.d("PrincipalFragment", "No pasada: " + actividad.getTitulo() + ", Fecha: " + actividad.getFecha());
+                    Log.d("PrincipalFragment", "No pasada - Título: " + actividad.getTitulo() +
+                            ", Fecha: " + actividad.getFecha() +
+                            ", idCreador: " + actividad.getIdCreador() +
+                            ", isPasada: " + actividad.isPasada() +
+                            ", Estado: " + actividad.getEstado());
                     tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
                 }
 
-                List<Actividad> actividadesPasadas = managerDb.obtenerActividadesPasadasPorUsuario(userId);
-                if (!actividadesPasadas.isEmpty()) {
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_TITULO, null, getString(R.string.actividades_pasadas), null));
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_PASADAS, null, null, actividadesPasadas));
-                    for (Actividad actividad : actividadesPasadas) {
-                        Log.d("PrincipalFragment", "Pasada: " + actividad.getTitulo() + ", Fecha: " + actividad.getFecha());
+                // Sort non-past activities by date (descending)
+                Collections.sort(noPasadas, new Comparator<Actividad>() {
+                    @Override
+                    public int compare(Actividad a1, Actividad a2) {
+                        try {
+                            Date fecha1 = sdf.parse(a1.getFecha());
+                            Date fecha2 = sdf.parse(a2.getFecha());
+                            return fecha2.compareTo(fecha1); // Most recent first
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                            return 0;
+                        }
+                    }
+                });
+
+                // Manually filter past activities
+                List<Actividad> actividadesPasadas = new ArrayList<>();
+                for (Actividad actividad : allActividades) {
+                    try {
+                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
+                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
+                            continue;
+                        }
+                        Date actividadDate = sdf.parse(actividad.getFecha());
+                        if (actividadDate.before(currentDate)) {
+                            actividad.setPasada(true); // Actualizar el estado de pasada
+                            actividadesPasadas.add(actividad);
+                            Log.d("PrincipalFragment", "Actividad pasada agregada - Título: " + actividad.getTitulo() +
+                                    ", Fecha: " + actividad.getFecha());
+                        }
+                    } catch (ParseException e) {
+                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
                     }
                 }
+                Log.d("PrincipalFragment", "Número de actividades pasadas: " + actividadesPasadas.size());
+                for (Actividad actividad : actividadesPasadas) {
+                    Log.d("PrincipalFragment", "Pasada - Título: " + actividad.getTitulo() +
+                            ", Fecha: " + actividad.getFecha() +
+                            ", idCreador: " + actividad.getIdCreador() +
+                            ", isPasada: " + actividad.isPasada() +
+                            ", Estado: " + actividad.getEstado());
+                }
+
+                // Sort past activities by date (descending)
+                Collections.sort(actividadesPasadas, new Comparator<Actividad>() {
+                    @Override
+                    public int compare(Actividad a1, Actividad a2) {
+                        try {
+                            Date fecha1 = sdf.parse(a1.getFecha());
+                            Date fecha2 = sdf.parse(a2.getFecha());
+                            return fecha2.compareTo(fecha1); // Most recent first
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                            return 0;
+                        }
+                    }
+                });
+
+                // Add past activities section if there are any
+                if (!actividadesPasadas.isEmpty()) {
+                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_TITULO, null, getString(R.string.actividades_pasadas).toUpperCase(Locale.getDefault()), null));
+                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_PASADAS, null, null, actividadesPasadas));
+                } else {
+                    Log.w("PrincipalFragment", "No se encontraron actividades pasadas para mostrar.");
+                }
+            } else {
+                Log.w("PrincipalFragment", "User ID is invalid: " + userId);
             }
 
-            // Actualizar la UI en el hilo principal
             requireActivity().runOnUiThread(() -> {
                 itemList.clear();
                 itemList.addAll(tempItemList);
+                Log.d("PrincipalFragment", "Total de ítems cargados en el RecyclerView: " + itemList.size());
                 actividadAdapter.notifyDataSetChanged();
                 actualizarVisibilidad();
+                if (!itemList.isEmpty()) {
+                    recyclerActividades.scrollToPosition(0); // Scroll to top to see new activities
+                    adjustScrollBehavior(); // Ajustar el comportamiento de scroll según el número de ítems
+                }
             });
         });
     }
 
+    private void adjustScrollBehavior() {
+        if (recyclerActividades != null && recyclerActividades.getAdapter() != null) {
+            int itemCount = recyclerActividades.getAdapter().getItemCount();
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int screenHeight = displayMetrics.heightPixels;
+            int navigationBarHeight = getNavigationBarHeight();
+            int usableHeight = screenHeight - navigationBarHeight;
+
+            // Estimar la altura de una tarjeta (aproximadamente 150dp + márgenes/padding)
+            float dpToPx = getResources().getDisplayMetrics().density;
+            int itemHeight = (int) (150 * dpToPx) + 32; // 150dp + 16dp de margen superior + 16dp de margen inferior
+
+            int totalHeight = itemCount * itemHeight;
+
+            // Si hay una sola actividad y su altura es menor o igual a la altura usable, deshabilitar scroll
+            if (itemCount <= 1 && totalHeight <= usableHeight) {
+                recyclerActividades.setNestedScrollingEnabled(false); // Deshabilitar scroll
+                ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Ajustar altura al contenido
+                recyclerActividades.setLayoutParams(params);
+            } else {
+                recyclerActividades.setNestedScrollingEnabled(true); // Habilitar scroll
+                ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
+                params.height = ViewGroup.LayoutParams.MATCH_PARENT; // Restaurar altura completa
+                recyclerActividades.setLayoutParams(params);
+            }
+        }
+    }
+
     private void actualizarVisibilidad() {
-        // Mostrar siempre el RecyclerView o el mensaje de vacío, dependiendo de si hay actividades
         recyclerActividades.setVisibility(itemList.isEmpty() ? View.GONE : View.VISIBLE);
         tvEmptyActividades.setVisibility(itemList.isEmpty() ? View.VISIBLE : View.GONE);
     }
@@ -164,6 +349,17 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             actividad.setFecha(nuevaFecha);
             actividad.setLugar(etEditarLugar.getText().toString());
             actividad.setResponsables(etEditarResponsables.getText().toString());
+
+            // Actualizar el estado de pasada después de editar la fecha
+            try {
+                Date currentDate = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                Date actividadDate = sdf.parse(nuevaFecha);
+                actividad.setPasada(actividadDate.before(currentDate));
+            } catch (ParseException e) {
+                Log.e("PrincipalFragment", "Error al parsear la nueva fecha: " + nuevaFecha, e);
+                actividad.setPasada(false); // Por defecto, no pasada si hay error
+            }
 
             managerDb.actualizarActividad(actividad);
             cargarActividades();

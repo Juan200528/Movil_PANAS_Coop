@@ -28,11 +28,16 @@ public class ManagerDb {
 
     public void open() {
         database = dbHelper.getWritableDatabase();
+        Log.d("ManagerDb", "Base de datos abierta: " + (database != null && database.isOpen()));
+        if (database != null && database.isOpen()) {
+            Log.d("ManagerDb", "Ruta de la base de datos: " + database.getPath());
+        }
     }
 
     public void close() {
         if (database != null && database.isOpen()) {
             database.close();
+            Log.d("ManagerDb", "Base de datos cerrada");
         }
         dbHelper.close();
     }
