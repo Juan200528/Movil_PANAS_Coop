@@ -16,6 +16,7 @@ public class RetrofitClient {
 
     private static final String BASE_URL = "https://backend-nrpu.onrender.com/";
     private static Retrofit retrofit = null;
+    private static ApiService apiService = null;
 
     private static Context appContext;
 
@@ -55,8 +56,10 @@ public class RetrofitClient {
                     .addConverterFactory(GsonConverterFactory.create())
                     .client(okHttpClient)
                     .build();
+
+            apiService = retrofit.create(ApiService.class);
         }
 
-        return retrofit.create(ApiService.class);
+        return apiService;
     }
 }

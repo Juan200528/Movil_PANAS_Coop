@@ -1,8 +1,8 @@
 package com.juan.movil_panas_coop.api;
 
+import com.juan.movil_panas_coop.model.Actividad;
 import com.juan.movil_panas_coop.model.LoginResponse;
 import com.juan.movil_panas_coop.model.User;
-import com.juan.movil_panas_coop.models.Actividad;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -17,26 +17,30 @@ import retrofit2.http.Header;
 
 public interface ApiService {
 
+
     @Multipart
     @POST("api/tasks")
-    Call<Actividad> crearActividad(
-            @Part("title") RequestBody title,
-            @Part("description") RequestBody description,
-            @Part("date") RequestBody date,
-            @Part("place") RequestBody place,
-            @Part("responsible") RequestBody responsible,
-            @Part("estado") RequestBody estado,
-            @Part("promocionada") RequestBody promocionada,
+    Call<Actividad> crearActividadJson(
+            @Part("actividad") RequestBody actividadJson,
             @Part MultipartBody.Part imagen
     );
 
-
+    /**
+     * Registra un nuevo usuario.
+     */
     @POST("api/auth/register")
     Call<LoginResponse> register(@Body User user);
 
+    /**
+     * Inicia sesión de usuario y devuelve el token o cookie de sesión.
+     */
     @POST("api/auth/login")
     Call<LoginResponse> login(@Body User user);
 
+    /**
+     * Actualiza los datos de un usuario identificado por su ID.
+     * Requiere token en el header Authorization.
+     */
     @PUT("users/{id}")
     Call<User> actualizarUsuario(
             @Path("id") int id,
@@ -44,6 +48,9 @@ public interface ApiService {
             @Header("Authorization") String token
     );
 
+    /**
+     * Cierra la sesión del usuario.
+     */
     @POST("api/auth/logout")
     Call<Void> logout();
 }

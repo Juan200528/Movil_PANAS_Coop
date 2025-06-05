@@ -1,6 +1,7 @@
 package com.juan.movil_panas_coop.model;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
 public class Actividad {
 
@@ -8,22 +9,19 @@ public class Actividad {
     private int id;
 
     @SerializedName("title")
-    private String titulo;
+    private String title;
 
     @SerializedName("description")
-    private String descripcion;
+    private String description;
 
     @SerializedName("date")
-    private String fecha;
+    private String date;
 
     @SerializedName("place")
-    private String lugar;
+    private String place;
 
-    @SerializedName("responsables")
-    private String responsables;
-
-    @SerializedName("image")
-    private String imagen; // URL o nombre de la imagen, si el backend lo devuelve
+    @SerializedName("responsible")
+    private List<String> responsible;
 
     @SerializedName("estado")
     private String estado;
@@ -31,77 +29,21 @@ public class Actividad {
     @SerializedName("promocionada")
     private boolean promocionada;
 
-    // --- Getters y Setters ---
+    @SerializedName("pasada")
+    private boolean pasada;
 
-    public int getId() {
-        return id;
-    }
+    @SerializedName("asistido")
+    private boolean asistido;
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public String getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
-    }
-
-    public String getLugar() {
-        return lugar;
-    }
-
-    public void setLugar(String lugar) {
-        this.lugar = lugar;
-    }
-
-    public String getResponsables() {
-        return responsables;
-    }
-
-    public void setResponsables(String responsables) {
-        this.responsables = responsables;
-    }
-
-    public String getImagen() {
-        return imagen;
-    }
-
-    public void setImagen(String imagen) {
-        this.imagen = imagen;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public boolean isPromocionada() {
-        return promocionada;
-    }
-
-    public void setPromocionada(boolean promocionada) {
-        this.promocionada = promocionada;
-    }
+    // Getters y setters
+    public void setId(int id) { this.id = id; }
+    public void setTitle(String title) { this.title = title; }
+    public void setDescription(String description) { this.description = description; }
+    public void setDate(String date) { this.date = date; }
+    public void setPlace(String place) { this.place = place; }
+    public void setResponsible(List<String> responsible) { this.responsible = responsible; }
+    public void setEstado(String estado) { this.estado = estado; }
+    public void setPromocionada(boolean promocionada) { this.promocionada = promocionada; }
+    public void setPasada(boolean pasada) { this.pasada = pasada; }
+    public void setAsistido(boolean asistido) { this.asistido = asistido; }
 }
