@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -23,36 +24,41 @@ import androidx.core.content.ContextCompat;
 import com.google.gson.Gson;
 import com.juan.movil_panas_coop.api.ApiService;
 import com.juan.movil_panas_coop.api.RetrofitClient;
-import com.juan.movil_panas_coop.model.Actividad;
+import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.utils.SessionManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.UUID;
+
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class CrearActividad extends AppCompatActivity {
 
-    private static final int PICK_IMAGE_REQUEST = 1;
-    private static final int PERMISSION_REQUEST_READ_EXTERNAL_STORAGE = 100;
+    private static final int PICK_IMAGE = 1;
+    private static final int PERM_REQ = 100;
 
-    private EditText etTitulo, etDescripcion, etFecha, etLugar, etResponsables;
-    private ImageButton btnSubir, btnCalendario;
-    private ImageView ivActividadImagen;
-
-    private File imagenFile = null;
-    private Uri imagenUri = null;
-
+    private EditText etTitulo, etDesc, etFecha, etLugar, etResp;
+    private ImageButton btnSubir, btnDate;
+    private ImageView ivImg;
+    private File imgFile;
+    private ApiService api;
     private SessionManager sessionManager;
 
     @Override
@@ -60,99 +66,60 @@ public class CrearActividad extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crear_actividad);
 
-        RetrofitClient.init(getApplicationContext());
-        sessionManager = new SessionManager(getApplicationContext());
+        api = RetrofitClient.getApiService();
+        sessionManager = new SessionManager(this);
 
         etTitulo = findViewById(R.id.etTitulo);
-        etDescripcion = findViewById(R.id.etDescripcion);
+        etDesc = findViewById(R.id.etDescripcion);
         etFecha = findViewById(R.id.etFecha);
         etLugar = findViewById(R.id.etLugar);
-        etResponsables = findViewById(R.id.etResponsables);
+        etResp = findViewById(R.id.etResponsables);
         btnSubir = findViewById(R.id.btnSubir);
-        btnCalendario = findViewById(R.id.btnCalendario);
-        ivActividadImagen = findViewById(R.id.ivActividadImagen);
+        btnDate = findViewById(R.id.btnCalendario);
+        ivImg = findViewById(R.id.ivActividadImagen);
 
-        findViewById(R.id.btnCrear).setOnClickListener(v -> crearActividad());
-        btnSubir.setOnClickListener(v -> seleccionarImagen());
-        btnCalendario.setOnClickListener(v -> mostrarDatePicker());
-        etFecha.setOnClickListener(v -> mostrarDatePicker());
+        btnDate.setOnClickListener(v -> showDatePicker());
+        btnSubir.setOnClickListener(v -> pickImage());
+        findViewById(R.id.btnCrear).setOnClickListener(v -> upload());
     }
 
-    private boolean tienePermisoGaleria() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
-                    == PackageManager.PERMISSION_GRANTED;
-        } else {
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED;
-        }
+    private void showDatePicker() {
+        Calendar c = Calendar.getInstance();
+        new DatePickerDialog(this, (DatePicker view, int year, int month, int dayOfMonth) -> {
+            etFecha.setText(String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth));
+        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
-    private void pedirPermisoGaleria() {
-        String permiso = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    private boolean storagePerm() {
+        String perm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 ? Manifest.permission.READ_MEDIA_IMAGES
                 : Manifest.permission.READ_EXTERNAL_STORAGE;
-
-        ActivityCompat.requestPermissions(this, new String[]{permiso},
-                PERMISSION_REQUEST_READ_EXTERNAL_STORAGE);
+        return ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void seleccionarImagen() {
-        if (!tienePermisoGaleria()) {
-            pedirPermisoGaleria();
+    private void pickImage() {
+        if (!storagePerm()) {
+            String perm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    ? Manifest.permission.READ_MEDIA_IMAGES
+                    : Manifest.permission.READ_EXTERNAL_STORAGE;
+            ActivityCompat.requestPermissions(this, new String[]{perm}, PERM_REQ);
         } else {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            intent.setType("image/*");
-            startActivityForResult(intent, PICK_IMAGE_REQUEST);
+            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            i.setType("image/*");
+            startActivityForResult(i, PICK_IMAGE);
         }
-    }
-
-    private void mostrarDatePicker() {
-        final Calendar calendario = Calendar.getInstance();
-        int year = calendario.get(Calendar.YEAR);
-        int month = calendario.get(Calendar.MONTH);
-        int day = calendario.get(Calendar.DAY_OF_MONTH);
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
-                (DatePicker view, int y, int m, int d) -> {
-                    String fechaSeleccionada = String.format("%04d-%02d-%02d", y, m + 1, d);
-                    etFecha.setText(fechaSeleccionada);
-                }, year, month, day);
-        datePickerDialog.show();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
-            imagenUri = data.getData();
-            if (imagenUri != null) {
-                ivActividadImagen.setImageURI(imagenUri);
-                imagenFile = uriToFile(imagenUri);
+        if (requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            ivImg.setImageURI(uri);
+            imgFile = uriToFile(uri);
+            if (imgFile == null) {
+                Toast.makeText(this, "No se pudo procesar la imagen seleccionada", Toast.LENGTH_SHORT).show();
             }
-        }
-    }
-
-    private File uriToFile(Uri uri) {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            File tempFile = File.createTempFile("temp_image", ".jpg", getCacheDir());
-            tempFile.deleteOnExit();
-
-            FileOutputStream out = new FileOutputStream(tempFile);
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = inputStream.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            out.close();
-            inputStream.close();
-
-            return tempFile;
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Error al procesar la imagen", Toast.LENGTH_SHORT).show();
-            return null;
         }
     }
 
@@ -160,76 +127,139 @@ public class CrearActividad extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_READ_EXTERNAL_STORAGE &&
-                grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            seleccionarImagen();
+        if (requestCode == PERM_REQ && grantResults.length > 0 &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            pickImage();
         } else {
-            Toast.makeText(this, "Permiso denegado para acceder a la galería", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Permiso para acceder a imágenes denegado", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void crearActividad() {
+    private File uriToFile(Uri uri) {
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) return null;
+            File tmp = new File(getCacheDir(), "img_" + UUID.randomUUID() + ".jpg");
+            try (FileOutputStream out = new FileOutputStream(tmp)) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, len);
+                }
+            }
+            return tmp;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void upload() {
         String titulo = etTitulo.getText().toString().trim();
-        String descripcion = etDescripcion.getText().toString().trim();
+        String descripcion = etDesc.getText().toString().trim();
         String fecha = etFecha.getText().toString().trim();
         String lugar = etLugar.getText().toString().trim();
-        String responsablesTexto = etResponsables.getText().toString().trim();
+        String responsablesStr = etResp.getText().toString().trim();
 
-        if (TextUtils.isEmpty(titulo) || TextUtils.isEmpty(descripcion) || TextUtils.isEmpty(fecha) ||
-                TextUtils.isEmpty(lugar) || TextUtils.isEmpty(responsablesTexto)) {
-            Toast.makeText(this, "Complete todos los campos requeridos", Toast.LENGTH_SHORT).show();
+        // Validaciones
+        if (TextUtils.isEmpty(titulo) || TextUtils.isEmpty(fecha) || TextUtils.isEmpty(lugar)) {
+            Toast.makeText(this, "Título, fecha, y lugar son obligatorios", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        List<String> responsablesLista = Arrays.stream(responsablesTexto.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-
-        Actividad actividad = new Actividad();
-        actividad.setTitle(titulo);
-        actividad.setDescription(descripcion);
-        actividad.setDate(fecha + "T00:00:00Z");
-        actividad.setPlace(lugar);
-        actividad.setResponsible(responsablesLista);
-        actividad.setEstado("pendiente");
-        actividad.setPromocionada(false);
-        actividad.setPasada(false);
-        actividad.setAsistido(false);
-
-        String actividadJson = new Gson().toJson(actividad);
-        RequestBody actividadBody = RequestBody.create(actividadJson, MediaType.parse("application/json"));
-
-        MultipartBody.Part imagenPart = null;
-        if (imagenFile != null && imagenFile.exists()) {
-            RequestBody requestFile = RequestBody.create(imagenFile, MediaType.parse("image/*"));
-            imagenPart = MultipartBody.Part.createFormData("imagen", imagenFile.getName(), requestFile);
+        String token = sessionManager.getToken();
+        if (token == null || token.isEmpty()) {
+            Toast.makeText(this, "Token de autenticación faltante. Por favor inicia sesión.", Toast.LENGTH_LONG).show();
+            return;
         }
 
-        ApiService apiService = RetrofitClient.getApiService();
-        Call<Actividad> call = apiService.crearActividadJson(actividadBody, imagenPart);
+        // ✅ CREAR MODELO CORRECTAMENTE
+        ActividadModel actividad = new ActividadModel();
+        actividad.setTitle(titulo);
+        actividad.setDescription(descripcion);
 
-        call.enqueue(new Callback<Actividad>() {
+        // ✅ MEJOR MANEJO DE FECHA
+        actividad.setDate(formatDateForBackend(fecha));
+        actividad.setPlace(lugar);
+
+        // ✅ MANEJO DE RESPONSABLES
+        if (!responsablesStr.isEmpty()) {
+            List<String> responsablesList = Arrays.asList(responsablesStr.split("\\s*,\\s*"));
+            actividad.setResponsible(responsablesList);
+        }
+
+        // ✅ LLAMADA DIRECTA CON JSON (SIN MULTIPART)
+        Call<ActividadModel> call = api.crearActividad("Bearer " + token, actividad);
+        call.enqueue(new Callback<ActividadModel>() {
             @Override
-            public void onResponse(Call<Actividad> call, Response<Actividad> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(CrearActividad.this, "Actividad creada correctamente", Toast.LENGTH_SHORT).show();
+            public void onResponse(Call<ActividadModel> call, Response<ActividadModel> response) {
+                // ✅ LIMPIAR ARCHIVO TEMPORAL
+                cleanupTempFile();
+
+                if (response.isSuccessful()) {
+                    Toast.makeText(CrearActividad.this, "Actividad creada exitosamente", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    String mensaje = "Error: ";
-                    try {
-                        mensaje += response.errorBody() != null ? response.errorBody().string() : response.message();
-                    } catch (Exception e) {
-                        mensaje += response.message();
-                    }
-                    Toast.makeText(CrearActividad.this, mensaje, Toast.LENGTH_LONG).show();
+                    handleErrorResponse(response);
                 }
             }
 
             @Override
-            public void onFailure(Call<Actividad> call, Throwable t) {
+            public void onFailure(Call<ActividadModel> call, Throwable t) {
+                // ✅ LIMPIAR ARCHIVO TEMPORAL EN ERROR
+                cleanupTempFile();
                 Toast.makeText(CrearActividad.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+// ✅ AGREGAR ESTOS MÉTODOS HELPER EN CrearActividad.java:
+
+    private String formatDateForBackend(String dateStr) {
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            Date date = inputFormat.parse(dateStr);
+            return outputFormat.format(date);
+        } catch (ParseException e) {
+            return dateStr + "T00:00:00.000Z"; // fallback
+        }
+    }
+
+    private void cleanupTempFile() {
+        if (imgFile != null && imgFile.exists()) {
+            boolean deleted = imgFile.delete();
+            if (!deleted) {
+                Log.w("CrearActividad", "No se pudo eliminar archivo temporal: " + imgFile.getAbsolutePath());
+            }
+        }
+    }
+
+    private void handleErrorResponse(Response<?> response) {
+        try {
+            if (response.errorBody() != null) {
+                String errorBody = response.errorBody().string();
+
+                // Manejo específico por código de error
+                switch (response.code()) {
+                    case 400:
+                        Toast.makeText(this, "Datos inválidos. Revisa los campos.", Toast.LENGTH_LONG).show();
+                        break;
+                    case 401:
+                        Toast.makeText(this, "No autorizado. Inicia sesión nuevamente.", Toast.LENGTH_LONG).show();
+                        // Opcional: redirigir a login
+                        break;
+                    case 500:
+                        Toast.makeText(this, "Error del servidor. Intenta más tarde.", Toast.LENGTH_LONG).show();
+                        break;
+                    default:
+                        Toast.makeText(this, "Error: " + errorBody, Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(this, "Error desconocido del servidor", Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Error procesando respuesta del servidor", Toast.LENGTH_LONG).show();
+        }
     }
 }

@@ -36,8 +36,17 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.juan.movil_panas_coop.api.ApiService;
+import com.juan.movil_panas_coop.api.RetrofitClient;
+import com.juan.movil_panas_coop.model.ActividadModel;
+import com.juan.movil_panas_coop.utils.SessionManager;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PrincipalFragment extends Fragment implements ActividadAdapter.OnActividadClickListener {
 
@@ -48,7 +57,8 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     private ManagerDb managerDb;
     private List<ActividadAdapter.Item> itemList;
     private int userId;
-    private ExecutorService executorService;
+
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -128,143 +138,194 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         return realHeight > usableHeight ? realHeight - usableHeight : 0;
     }
 
+
+
     public void cargarActividades() {
+        Log.d("PrincipalFragment", "=== INICIO cargarActividades() desde API ===");
+
+        SessionManager sessionManager = new SessionManager(requireContext());
+        String token = sessionManager.getToken();
+
+        if (token == null || token.isEmpty()) {
+            Log.e("PrincipalFragment", "No hay token de autenticación");
+            Toast.makeText(getContext(), "Error: No se encontró token de autenticación", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        ApiService api = RetrofitClient.getApiService();
+        Call<List<ActividadModel>> call = api.obtenerActividades("Bearer " + token);
+
+        call.enqueue(new Callback<List<ActividadModel>>() {
+            @Override
+            public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<ActividadModel> actividadesAPI = response.body();
+                    Log.d("PrincipalFragment", "Actividades recibidas de API: " + actividadesAPI.size());
+
+                    procesarActividadesDeAPI(actividadesAPI);
+                } else {
+                    Log.e("PrincipalFragment", "Error al obtener actividades: " + response.code());
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Error al cargar actividades", Toast.LENGTH_SHORT).show();
+                        actualizarVisibilidad();
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ActividadModel>> call, Throwable t) {
+                Log.e("PrincipalFragment", "Error de conexión: " + t.getMessage());
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                    actualizarVisibilidad();
+                });
+            }
+        });
+    }
+
+    private void procesarActividadesDeAPI(List<ActividadModel> actividadesAPI) {
         executorService.execute(() -> {
             List<ActividadAdapter.Item> tempItemList = new ArrayList<>();
 
-            if (userId != -1) {
-                // Fetch all activities for the user
-                List<Actividad> allActividades = managerDb.obtenerActividadesPorUsuario(userId);
-                Log.d("PrincipalFragment", "Total actividades recuperadas para userId " + userId + ": " + allActividades.size());
-                for (Actividad actividad : allActividades) {
-                    Log.d("PrincipalFragment", "Actividad - ID: " + actividad.getId() +
-                            ", Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado() +
-                            ", Promocionada: " + actividad.isPromocionada() +
-                            ", Asistido: " + actividad.isAsistido() +
-                            ", ImagenRuta: " + actividad.getImagenRuta());
+            List<Actividad> actividadesConvertidas = new ArrayList<>();
+            for (ActividadModel actividadAPI : actividadesAPI) {
+                Actividad actividad = convertirAPIaActividad(actividadAPI);
+                actividadesConvertidas.add(actividad);
+                Log.d("PrincipalFragment", "Actividad convertida: " + actividad.getTitulo() + " - " + actividad.getFecha());
+            }
+
+            if (!actividadesConvertidas.isEmpty()) {
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                String fechaHoyStr = sdf.format(new Date());
+                Date fechaHoy;
+                try {
+                    fechaHoy = sdf.parse(fechaHoyStr);
+                } catch (ParseException e) {
+                    fechaHoy = new Date();
                 }
 
-                // Manually filter non-past activities
-                List<Actividad> noPasadas = new ArrayList<>();
-                Date currentDate = new Date();
-                Log.d("PrincipalFragment", "Fecha actual: " + currentDate);
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                for (Actividad actividad : allActividades) {
+                List<Actividad> actividadesActuales = new ArrayList<>();
+                List<Actividad> actividadesPasadas = new ArrayList<>();
+
+                for (Actividad actividad : actividadesConvertidas) {
+                    if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
+                        actividad.setPasada(false);
+                        actividadesActuales.add(actividad);
+                        continue;
+                    }
+
                     try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            actividad.setPasada(false); // Por defecto, no pasada si la fecha es inválida
-                            noPasadas.add(actividad);
-                            continue;
-                        }
                         Date actividadDate = sdf.parse(actividad.getFecha());
-                        Log.d("PrincipalFragment", "Comparando - Actividad Fecha: " + actividadDate + " con Current Fecha: " + currentDate);
-                        if (actividadDate.after(currentDate) || actividadDate.equals(currentDate)) {
-                            actividad.setPasada(false); // Actualizar el estado de pasada
-                            noPasadas.add(actividad);
+                        if (actividadDate.before(fechaHoy)) {
+                            actividad.setPasada(true);
+                            actividadesPasadas.add(actividad);
+                        } else {
+                            actividad.setPasada(false);
+                            actividadesActuales.add(actividad);
                         }
                     } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                        actividad.setPasada(false); // Por defecto, no pasada si hay error
-                        noPasadas.add(actividad);
+                        Log.e("PrincipalFragment", "Error parsing date: " + actividad.getFecha(), e);
+                        actividad.setPasada(false);
+                        actividadesActuales.add(actividad);
                     }
                 }
-                Log.d("PrincipalFragment", "Número de actividades no pasadas: " + noPasadas.size());
-                for (Actividad actividad : noPasadas) {
-                    Log.d("PrincipalFragment", "No pasada - Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado());
+
+                Collections.sort(actividadesActuales, (a1, a2) -> {
+                    try {
+                        Date fecha1 = sdf.parse(a1.getFecha());
+                        Date fecha2 = sdf.parse(a2.getFecha());
+                        return fecha1.compareTo(fecha2);
+                    } catch (ParseException e) {
+                        return 0;
+                    }
+                });
+
+                for (Actividad actividad : actividadesActuales) {
                     tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
                 }
 
-                // Sort non-past activities by date (descending)
-                Collections.sort(noPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
-
-                // Manually filter past activities
-                List<Actividad> actividadesPasadas = new ArrayList<>();
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        if (actividadDate.before(currentDate)) {
-                            actividad.setPasada(true); // Actualizar el estado de pasada
-                            actividadesPasadas.add(actividad);
-                            Log.d("PrincipalFragment", "Actividad pasada agregada - Título: " + actividad.getTitulo() +
-                                    ", Fecha: " + actividad.getFecha());
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                    }
-                }
-                Log.d("PrincipalFragment", "Número de actividades pasadas: " + actividadesPasadas.size());
-                for (Actividad actividad : actividadesPasadas) {
-                    Log.d("PrincipalFragment", "Pasada - Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado());
-                }
-
-                // Sort past activities by date (descending)
-                Collections.sort(actividadesPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
-
-                // Add past activities section if there are any
                 if (!actividadesPasadas.isEmpty()) {
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_TITULO, null, getString(R.string.actividades_pasadas).toUpperCase(Locale.getDefault()), null));
+                    Collections.sort(actividadesPasadas, (a1, a2) -> {
+                        try {
+                            Date fecha1 = sdf.parse(a1.getFecha());
+                            Date fecha2 = sdf.parse(a2.getFecha());
+                            return fecha2.compareTo(fecha1);
+                        } catch (ParseException e) {
+                            return 0;
+                        }
+                    });
+
+                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_TITULO, null,
+                            getString(R.string.actividades_pasadas).toUpperCase(Locale.getDefault()), null));
                     tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_PASADAS, null, null, actividadesPasadas));
-                } else {
-                    Log.w("PrincipalFragment", "No se encontraron actividades pasadas para mostrar.");
                 }
-            } else {
-                Log.w("PrincipalFragment", "User ID is invalid: " + userId);
             }
 
             requireActivity().runOnUiThread(() -> {
                 itemList.clear();
                 itemList.addAll(tempItemList);
-                Log.d("PrincipalFragment", "Total de ítems cargados en el RecyclerView: " + itemList.size());
+                Log.d("PrincipalFragment", "Total de ítems cargados desde API: " + itemList.size());
+
                 actividadAdapter.notifyDataSetChanged();
                 actualizarVisibilidad();
+
                 if (!itemList.isEmpty()) {
-                    recyclerActividades.scrollToPosition(0); // Scroll to top to see new activities
-                    adjustScrollBehavior(); // Ajustar el comportamiento de scroll según el número de ítems
+                    recyclerActividades.scrollToPosition(0);
+                    adjustScrollBehavior();
                 }
             });
         });
     }
+
+    private Actividad convertirAPIaActividad(ActividadModel actividadAPI) {
+        Actividad actividad = new Actividad();
+        actividad.setId(actividadAPI.getId() != null ? Integer.parseInt(actividadAPI.getId()) : 0);
+        actividad.setTitulo(actividadAPI.getTitle());
+        actividad.setDescripcion(actividadAPI.getDescription());
+        actividad.setLugar(actividadAPI.getPlace());
+        actividad.setIdCreador(userId);
+
+        if (actividadAPI.getDate() != null) {
+            actividad.setFecha(convertirFechaISOaLocal(actividadAPI.getDate()));
+        }
+
+        if (actividadAPI.getResponsible() != null && !actividadAPI.getResponsible().isEmpty()) {
+            actividad.setResponsables(String.join(", ", actividadAPI.getResponsible()));
+        }
+
+        return actividad;
+    }
+
+    private String convertirFechaISOaLocal(String fechaISO) {
+        try {
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat localFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            Date date = isoFormat.parse(fechaISO);
+            return localFormat.format(date);
+        } catch (ParseException e) {
+            Log.e("PrincipalFragment", "Error convirtiendo fecha ISO con milisegundos: " + fechaISO, e);
+            try {
+                SimpleDateFormat isoFormat2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
+                isoFormat2.setTimeZone(TimeZone.getTimeZone("UTC"));
+                SimpleDateFormat localFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                Date date = isoFormat2.parse(fechaISO);
+                return localFormat.format(date);
+            } catch (ParseException e2) {
+                Log.e("PrincipalFragment", "Error convirtiendo fecha ISO sin milisegundos: " + fechaISO, e2);
+                try {
+                    SimpleDateFormat simpleFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                    SimpleDateFormat localFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                    Date date = simpleFormat.parse(fechaISO);
+                    return localFormat.format(date);
+                } catch (ParseException e3) {
+                    Log.e("PrincipalFragment", "Error convirtiendo fecha simple: " + fechaISO, e3);
+                    return fechaISO;
+                }
+            }
+        }
+    }
+
 
     private void adjustScrollBehavior() {
         if (recyclerActividades != null && recyclerActividades.getAdapter() != null) {
