@@ -1,99 +1,65 @@
+<!-- fragment_comunidades.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    tools:context=".ui.comunidades.ComunidadesFragment">
+    android:orientation="vertical">
 
-    <!-- Sección de la Lista de Comunidades -->
-<FrameLayout
-android:id="@+id/container_lista_comunidades"
-android:layout_width="0dp"
-android:layout_height="match_parent"
-android:layout_weight="1"> <!-- Ajusta el peso según tus necesidades -->
+    <!-- RecyclerView for communities -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewComunidades"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="vertical" />
 
-<androidx.recyclerview.widget.RecyclerView
-    android:id="@+id/recyclerViewComunidades"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="8dp"/>
+    <!-- TextView for empty state -->
+    <TextView
+        android:id="@+id/textViewNoComunidades"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No hay comunidades disponibles"
+        android:visibility="gone"
+        android:gravity="center"
+        android:textSize="16sp" />
 
-<TextView
-    android:id="@+id/textViewNoComunidades"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="No hay comunidades disponibles."
-    android:layout_gravity="center"
-    android:visibility="gone"/>
-</FrameLayout>
+    <!-- Chat container -->
+    <LinearLayout
+        android:id="@+id/container_chat_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
 
-    <!-- Separador (Opcional) -->
-<View
-android:layout_width="1dp"
-android:layout_height="match_parent"
-android:background="?android:attr/listDivider" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewChatMessages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="vertical" />
 
-    <!-- Sección del Chat -->
-<RelativeLayout
-android:id="@+id/container_chat_view"
-android:layout_width="0dp"
-android:layout_height="match_parent"
-android:layout_weight="2"
-    android:visibility="gone"> <!-- Inicialmente oculto hasta que se seleccione una comunidad -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-<TextView
-android:id="@+id/textViewChatTitle"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:textAppearance="?attr/textAppearanceHeadline6"
-android:padding="8dp"
-android:background="?attr/colorPrimary"
-android:textColor="?attr/colorOnPrimary"
-android:text="Selecciona una comunidad para chatear"
-android:layout_alignParentTop="true"/>
+            <EditText
+                android:id="@+id/editTextChatMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Escribe un mensaje"
+                android:inputType="text" />
 
-<androidx.recyclerview.widget.RecyclerView
-android:id="@+id/recyclerViewChatMessages"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-android:layout_above="@+id/layout_send_message_comunidad"
-android:layout_below="@id/textViewChatTitle"
-android:padding="8dp"/>
-
-<LinearLayout
-android:id="@+id/layout_send_message_comunidad"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:layout_alignParentBottom="true"
-android:orientation="horizontal"
-android:padding="8dp">
-
-<EditText
-    android:id="@+id/editTextChatMessage"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:hint="Escribe un mensaje..."
-    android:inputType="textMultiLine"
-    android:maxLines="5" />
-
-<Button
-    android:id="@+id/buttonSendChatMessage"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="Enviar" />
-</LinearLayout>
-    </RelativeLayout>
-
-    <!-- Mensaje para cuando no hay comunidad seleccionada y el chat está visible -->
-<TextView
-android:id="@+id/textViewSelectComunidadPrompt"
-android:layout_width="0dp"
-android:layout_height="match_parent"
-android:layout_weight="2"
-android:text="Selecciona una comunidad de la lista para ver el chat."
-android:gravity="center"
-android:textAppearance="?attr/textAppearanceSubtitle1"
-android:visibility="visible"/> <!-- Inicialmente visible si container_chat_view está gone -->
-
+            <Button
+                android:id="@+id/buttonSendChatMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enviar" />
+            <Button
+                android:id="@+id/buttonCrearNuevaComunidad"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crear Nueva Comunidad" />
+        </LinearLayout>
     </LinearLayout>
+</LinearLayout>

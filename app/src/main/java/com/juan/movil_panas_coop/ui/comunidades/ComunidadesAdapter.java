@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 // Eliminar: import com.juan.movil_panas_coop.ChatActivity;
 import com.juan.movil_panas_coop.R;
-import com.juan.movil_panas_coop.models.Comunidad;
+import com.juan.movil_panas_coop.model.Comunidad;
 
 import java.util.List;
 

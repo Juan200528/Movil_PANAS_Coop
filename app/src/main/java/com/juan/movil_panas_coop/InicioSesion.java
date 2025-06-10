@@ -86,16 +86,16 @@ public class InicioSesion extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     LoginResponse loginResponse = response.body();
 
-                    Toast.makeText(InicioSesion.this, "ID de usuario: " + loginResponse.getId(), Toast.LENGTH_SHORT).show();
-
+                    // Guardar sesión con ID de usuario
                     sessionManager.guardarSesion(
-                            loginResponse.getId(),              // ID como String
+                            loginResponse.getId(),              // ID del usuario
                             loginResponse.getUsername(),
                             loginResponse.getEmail(),
                             "N/A"                               // Puedes cambiar esto si tienes teléfono
                     );
                     sessionManager.guardarToken(loginResponse.getToken());
 
+                    // Redirigir al menú principal
                     redirigirAMenu();
                     Toast.makeText(InicioSesion.this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show();
                 } else {

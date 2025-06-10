@@ -1,5 +1,5 @@
 // Asegúrate que este archivo esté en: com/juan/movil_panas_coop/models/Comunidad.java
-package com.juan.movil_panas_coop.models;
+package com.juan.movil_panas_coop.model;
 
 public class Comunidad {
     private String idMongo;

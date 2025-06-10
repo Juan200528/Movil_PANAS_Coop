@@ -1,4 +1,4 @@
-package com.juan.movil_panas_coop;
+package com.juan.movil_panas_coop.model;
 
 import com.google.firebase.firestore.ServerTimestamp;
 import java.util.Date;

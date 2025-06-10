@@ -4,48 +4,54 @@
     package="com.juan.movil_panas_coop">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".MyApplication"
-    android:allowBackup="true"
-    android:dataExtractionRules="@xml/data_extraction_rules"
-    android:fullBackupContent="@xml/backup_rules"
-    android:icon="@mipmap/ic_launcher"
-    android:label="@string/app_name"
-    android:roundIcon="@mipmap/ic_launcher_round"
-    android:supportsRtl="true"
-    android:theme="@style/Theme.Movil_PANAS_Coop"
-    tools:targetApi="31">
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Movil_PANAS_Coop"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="31">
 
-    <activity
-        android:name=".CrearActividad"
-        android:exported="false" />
+        <activity
+            android:name=".CrearActividad"
+            android:exported="false" />
 
-    <activity
-        android:name=".MenuActivity"
-        android:exported="false"
-        android:windowSoftInputMode="adjustPan" />
+        <activity
+            android:name=".MenuActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />
 
-    <activity
-        android:name=".Registro"
-        android:exported="false" />
+        <activity
+            android:name=".Registro"
+            android:exported="false" />
 
-    <activity
-        android:name=".InicioSesion"
-        android:exported="false" />
+        <activity
+            android:name=".InicioSesion"
+            android:exported="false" />
 
-    <activity
-        android:name=".MainActivity"
-        android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
 
-    <activity
-        android:name=".PantallaPrincipal"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-    </activity>
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false" />
 
-</application>
-    </manifest>
+        <activity
+            android:name=".PantallaPrincipal"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+</manifest>

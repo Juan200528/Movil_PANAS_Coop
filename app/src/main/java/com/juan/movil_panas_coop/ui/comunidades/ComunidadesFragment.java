@@ -1,7 +1,7 @@
 package com.juan.movil_panas_coop.ui.comunidades;
 
-import static com.google.api.ChangeType.REMOVED;
-
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,24 +15,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RelativeLayout; // Para el container_chat_view
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
-import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.juan.movil_panas_coop.Message;      // Importa tu clase Message
-import com.juan.movil_panas_coop.MessageAdapter; // Importa tu MessageAdapter para el chat
+import com.juan.movil_panas_coop.ChatActivity;
+import com.juan.movil_panas_coop.CrearComunidadActivity;
+import com.juan.movil_panas_coop.InicioSesion;
+import com.juan.movil_panas_coop.Message;
+import com.juan.movil_panas_coop.MessageAdapter;
 import com.juan.movil_panas_coop.R;
-import com.juan.movil_panas_coop.models.Comunidad;
+import com.juan.movil_panas_coop.model.Comunidad;
+import com.juan.movil_panas_coop.utils.SessionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,31 +41,22 @@ public class ComunidadesFragment extends Fragment implements ComunidadesAdapter.
 
     private static final String TAG = "ComunidadesFragment";
 
-    // UI para la lista de comunidades
     private RecyclerView recyclerViewComunidades;
     private ComunidadesAdapter comunidadesAdapter;
     private List<Comunidad> comunidadList;
     private TextView textViewNoComunidades;
-    private TextView textViewSelectComunidadPrompt;
-
-    // UI para el Chat
-    private RelativeLayout containerChatView;
-    private TextView textViewChatTitle;
-    private RecyclerView recyclerViewChatMessages;
+    private LinearLayout containerChatView; // Fixed type
     private EditText editTextChatMessage;
     private Button buttonSendChatMessage;
-    private com.juan.movil_panas_coop.MessageAdapter chatMessagesAdapter; // Usar el MessageAdapter existente
+    private RecyclerView recyclerViewChatMessages;
+    private MessageAdapter chatMessagesAdapter;
     private List<Message> chatMessageList;
 
-    // Firebase
     private FirebaseFirestore db;
-    private FirebaseAuth mAuth;
-    private FirebaseUser currentUser;
     private CollectionReference currentChatMessagesRef;
-    private ListenerRegistration chatListenerRegistration; // Para remover el listener anterior
+    private ListenerRegistration chatListenerRegistration;
 
     private Comunidad comunidadSeleccionadaActual = null;
-
 
     public ComunidadesFragment() {
         // Required empty public constructor
@@ -75,46 +66,39 @@ public class ComunidadesFragment extends Fragment implements ComunidadesAdapter.
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
-        mAuth = FirebaseAuth.getInstance();
-        currentUser = mAuth.getCurrentUser();
     }
 
+    @SuppressLint("MissingInflatedId")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_comunidades, container, false);
 
-        // --- Inicializar UI de Lista de Comunidades ---
         recyclerViewComunidades = view.findViewById(R.id.recyclerViewComunidades);
         textViewNoComunidades = view.findViewById(R.id.textViewNoComunidades);
-        textViewSelectComunidadPrompt = view.findViewById(R.id.textViewSelectComunidadPrompt);
+        containerChatView = view.findViewById(R.id.container_chat_view); // Fixed cast
+        editTextChatMessage = view.findViewById(R.id.editTextChatMessage);
+        buttonSendChatMessage = view.findViewById(R.id.buttonSendChatMessage);
+        recyclerViewChatMessages = view.findViewById(R.id.recyclerViewChatMessages);
+
         recyclerViewComunidades.setLayoutManager(new LinearLayoutManager(getContext()));
         comunidadList = new ArrayList<>();
-        // Pasamos 'this' porque ComunidadesFragment ahora implementa OnComunidadClickListener
         comunidadesAdapter = new ComunidadesAdapter(getContext(), comunidadList, this);
         recyclerViewComunidades.setAdapter(comunidadesAdapter);
 
-        // --- Inicializar UI del Chat ---
-        containerChatView = view.findViewById(R.id.container_chat_view);
-        textViewChatTitle = view.findViewById(R.id.textViewChatTitle);
-        recyclerViewChatMessages = view.findViewById(R.id.recyclerViewChatMessages);
-        editTextChatMessage = view.findViewById(R.id.editTextChatMessage);
-        buttonSendChatMessage = view.findViewById(R.id.buttonSendChatMessage);
-
         chatMessageList = new ArrayList<>();
-        // Asegúrate que tu MessageAdapter esté en el paquete correcto
-        chatMessagesAdapter = new com.juan.movil_panas_coop.MessageAdapter(getContext(), chatMessageList);
-        LinearLayoutManager chatLayoutManager = new LinearLayoutManager(getContext());
-        chatLayoutManager.setStackFromEnd(true);
-        recyclerViewChatMessages.setLayoutManager(chatLayoutManager);
+        chatMessagesAdapter = new MessageAdapter(getContext(), chatMessageList);
+        recyclerViewChatMessages.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewChatMessages.setAdapter(chatMessagesAdapter);
 
         buttonSendChatMessage.setOnClickListener(v -> sendMessage());
 
-        // Inicialmente, la vista de chat está oculta
         containerChatView.setVisibility(View.GONE);
-        textViewSelectComunidadPrompt.setVisibility(View.VISIBLE);
-
+        Button buttonCrearNuevaComunidad = view.findViewById(R.id.buttonCrearNuevaComunidad);
+        buttonCrearNuevaComunidad.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), CrearComunidadActivity.class);
+            startActivity(intent);
+        });
 
         return view;
     }
@@ -122,66 +106,52 @@ public class ComunidadesFragment extends Fragment implements ComunidadesAdapter.
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (currentUser == null) {
-            Toast.makeText(getContext(), "Usuario no autenticado. Por favor, inicia sesión.", Toast.LENGTH_LONG).show();
-            // Aquí podrías redirigir al login o deshabilitar la funcionalidad.
+
+        SessionManager sessionManager = new SessionManager(requireContext());
+        String userId = sessionManager.getUserId();
+
+        if (TextUtils.isEmpty(userId)) {
+            // Mostrar mensaje de usuario no autenticado
+            Toast.makeText(getContext(), "Usuario no autenticado. Redirigiendo al inicio de sesión.", Toast.LENGTH_LONG).show();
+
+            // Redirigir al inicio de sesión
+            startActivity(new Intent(getContext(), InicioSesion.class));
+            requireActivity().finish();
             return;
         }
+
+        // Cargar comunidades si el usuario está autenticado
         cargarComunidades();
     }
 
     private void cargarComunidades() {
-        Log.d(TAG, "Cargando comunidades (simulado)...");
-        List<Comunidad> datosDeEjemplo = new ArrayList<>();
-        datosDeEjemplo.add(new Comunidad("chat_general_panascoop", "Chat General PanasCoop", "Discusiones generales."));
-        datosDeEjemplo.add(new Comunidad("actividad_voluntariado_xyz", "Voluntariado Parque", "Coordinación del voluntariado."));
-
-        if (datosDeEjemplo.isEmpty()) {
-            textViewNoComunidades.setVisibility(View.VISIBLE);
-            recyclerViewComunidades.setVisibility(View.GONE);
-        } else {
-            textViewNoComunidades.setVisibility(View.GONE);
-            recyclerViewComunidades.setVisibility(View.VISIBLE);
-            comunidadList.clear();
-            comunidadList.addAll(datosDeEjemplo);
-            comunidadesAdapter.notifyDataSetChanged();
-        }
-        Log.d(TAG, "Comunidades cargadas (simulado): " + comunidadList.size());
-
-        // Aquí iría tu lógica para cargar desde la API con Retrofit
+        db.collection("comunidades")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    comunidadList.clear();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Comunidad comunidad = document.toObject(Comunidad.class);
+                        comunidadList.add(comunidad);
+                    }
+                    comunidadesAdapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Error al cargar comunidades", Toast.LENGTH_SHORT).show();
+                });
     }
 
-    // --- Implementación de OnComunidadClickListener ---
     @Override
     public void onComunidadClick(Comunidad comunidad) {
-        Log.d(TAG, "Comunidad seleccionada: " + comunidad.getNombre() + " ID: " + comunidad.getIdMongo());
-        comunidadSeleccionadaActual = comunidad;
+        Log.d(TAG, "Comunidad seleccionada: " + comunidad.getNombre());
 
-        if (comunidad.getIdMongo() == null || comunidad.getIdMongo().isEmpty()) {
-            Toast.makeText(getContext(), "ID de comunidad no válido.", Toast.LENGTH_SHORT).show();
-            containerChatView.setVisibility(View.GONE);
-            textViewSelectComunidadPrompt.setVisibility(View.VISIBLE);
-            return;
-        }
-
-        textViewChatTitle.setText("Chat: " + comunidad.getNombre());
-        containerChatView.setVisibility(View.VISIBLE);
-        textViewSelectComunidadPrompt.setVisibility(View.GONE);
-
-
-        // Remover listener anterior si existe para evitar múltiples listeners al mismo chat o a chats antiguos
-        if (chatListenerRegistration != null) {
-            chatListenerRegistration.remove();
-        }
-        chatMessageList.clear(); // Limpiar mensajes del chat anterior
-        chatMessagesAdapter.notifyDataSetChanged();
-
-
-        currentChatMessagesRef = db.collection("chats").document(comunidad.getIdMongo()).collection("messages");
-        listenForChatMessages();
+        // Crear un Intent para navegar a ChatActivity
+        Intent intent = new Intent(getContext(), ChatActivity.class);
+        intent.putExtra("ACTIVITY_MONGO_ID", comunidad.getIdMongo()); // Pasar el ID de MongoDB
+        intent.putExtra("ACTIVITY_NAME", comunidad.getNombre());     // Pasar el nombre de la comunidad
+        startActivity(intent);
     }
 
-    // --- Lógica del Chat (Movida desde ChatActivity) ---
+
     private void sendMessage() {
         if (comunidadSeleccionadaActual == null || currentChatMessagesRef == null) {
             Toast.makeText(getContext(), "Selecciona una comunidad primero.", Toast.LENGTH_SHORT).show();
@@ -194,22 +164,21 @@ public class ComunidadesFragment extends Fragment implements ComunidadesAdapter.
             return;
         }
 
-        if (currentUser != null) {
-            String senderId = currentUser.getUid();
-            String senderName = currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "Usuario";
+        SessionManager sessionManager = new SessionManager(requireContext());
+        String userId = sessionManager.getUserId();
+        String username = sessionManager.getUsername();
 
-            Message message = new Message(senderId, senderName, messageText);
+        Message message = new Message(userId, username, messageText);
 
-            currentChatMessagesRef.add(message)
-                    .addOnSuccessListener(documentReference -> {
-                        editTextChatMessage.setText("");
-                        Log.d(TAG, "Mensaje enviado con ID: " + documentReference.getId());
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.w(TAG, "Error al enviar mensaje", e);
-                        Toast.makeText(getContext(), "Error al enviar mensaje.", Toast.LENGTH_SHORT).show();
-                    });
-        }
+        currentChatMessagesRef.add(message)
+                .addOnSuccessListener(documentReference -> {
+                    editTextChatMessage.setText("");
+                    Log.d(TAG, "Mensaje enviado con ID: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error al enviar mensaje", e);
+                    Toast.makeText(getContext(), "Error al enviar mensaje.", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void listenForChatMessages() {
@@ -219,30 +188,23 @@ public class ComunidadesFragment extends Fragment implements ComunidadesAdapter.
                 .addSnapshotListener((snapshots, e) -> {
                     if (e != null) {
                         Log.w(TAG, "Listen failed.", e);
-                        if (getContext() != null) Toast.makeText(getContext(), "Error al cargar mensajes.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Error al cargar mensajes.", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    boolean scrolled = false;
                     for (DocumentChange dc : snapshots.getDocumentChanges()) {
                         switch (dc.getType()) {
                             case ADDED:
                                 Message message = dc.getDocument().toObject(Message.class);
                                 chatMessageList.add(message);
                                 chatMessagesAdapter.notifyItemInserted(chatMessageList.size() - 1);
-                                if (!scrolled) { // Solo hacer scroll una vez por batch de nuevos mensajes
-                                    recyclerViewChatMessages.scrollToPosition(chatMessageList.size() - 1);
-                                    scrolled = true;
-                                }
-                                Log.d(TAG, "Nuevo mensaje: " + dc.getDocument().getData());
+                                recyclerViewChatMessages.scrollToPosition(chatMessageList.size() - 1);
                                 break;
                             case MODIFIED:
                                 Log.d(TAG, "Mensaje modificado: " + dc.getDocument().getData());
-                                // Implementar lógica de actualización si es necesario
                                 break;
                             case REMOVED:
                                 Log.d(TAG, "Mensaje eliminado: " + dc.getDocument().getData());
-                                // Implementar lógica de eliminación si es necesario
                                 break;
                         }
                     }
@@ -252,7 +214,6 @@ public class ComunidadesFragment extends Fragment implements ComunidadesAdapter.
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Es muy importante remover el listener para evitar memory leaks y consumo innecesario
         if (chatListenerRegistration != null) {
             chatListenerRegistration.remove();
         }
