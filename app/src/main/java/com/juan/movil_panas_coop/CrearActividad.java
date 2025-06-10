@@ -98,27 +98,97 @@ public class CrearActividad extends AppCompatActivity {
     }
 
     private void pickImage() {
+        Log.d("CrearActividad", "pickImage() called");
+
         if (!storagePerm()) {
+            Log.d("CrearActividad", "Storage permission not granted, requesting permission");
             String perm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                     ? Manifest.permission.READ_MEDIA_IMAGES
                     : Manifest.permission.READ_EXTERNAL_STORAGE;
             ActivityCompat.requestPermissions(this, new String[]{perm}, PERM_REQ);
         } else {
-            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            i.setType("image/*");
-            startActivityForResult(i, PICK_IMAGE);
+            Log.d("CrearActividad", "Storage permission granted, opening gallery");
+            openImageGallery();
+        }
+    }
+
+    private void openImageGallery() {
+        try {
+            // Método preferido para Android moderno
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+
+            // Verificar si hay una app que pueda manejar este intent
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(intent, PICK_IMAGE);
+                Log.d("CrearActividad", "Gallery intent started successfully");
+            } else {
+                // Fallback si no hay app de galería
+                Log.w("CrearActividad", "No gallery app found, trying alternative");
+                Intent fallbackIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                fallbackIntent.setType("image/*");
+
+                if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(fallbackIntent, PICK_IMAGE);
+                } else {
+                    Toast.makeText(this, "No se encontró una aplicación para seleccionar imágenes", Toast.LENGTH_LONG).show();
+                }
+            }
+
+        } catch (Exception e) {
+            Log.e("CrearActividad", "Error opening image gallery", e);
+            Toast.makeText(this, "Error al abrir la galería: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null) {
-            Uri uri = data.getData();
-            ivImg.setImageURI(uri);
-            imgFile = uriToFile(uri);
-            if (imgFile == null) {
-                Toast.makeText(this, "No se pudo procesar la imagen seleccionada", Toast.LENGTH_SHORT).show();
+
+        Log.d("CrearActividad", "onActivityResult - requestCode: " + requestCode +
+                ", resultCode: " + resultCode + ", data: " + (data != null));
+
+        if (requestCode == PICK_IMAGE) {
+            if (resultCode == RESULT_OK && data != null) {
+                Uri selectedImageUri = data.getData();
+
+                if (selectedImageUri != null) {
+                    Log.d("CrearActividad", "Selected image URI: " + selectedImageUri.toString());
+
+                    try {
+                        // Mostrar la imagen en el ImageView
+                        ivImg.setImageURI(selectedImageUri);
+                        Log.d("CrearActividad", "Image displayed in ImageView successfully");
+
+                        // Convertir URI a File en un hilo separado para evitar bloquear UI
+                        new Thread(() -> {
+                            File convertedFile = uriToFile(selectedImageUri);
+
+                            runOnUiThread(() -> {
+                                if (convertedFile != null) {
+                                    imgFile = convertedFile;
+                                    Log.d("CrearActividad", "Image conversion successful");
+                                    Toast.makeText(CrearActividad.this, "Imagen seleccionada correctamente", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Log.e("CrearActividad", "Image conversion failed");
+                                    Toast.makeText(CrearActividad.this, "Error al procesar la imagen seleccionada", Toast.LENGTH_SHORT).show();
+                                    // Limpiar la imagen del ImageView si falló la conversión
+                                    ivImg.setImageResource(R.drawable.ic_launcher_background); // o tu imagen por defecto
+                                }
+                            });
+                        }).start();
+
+                    } catch (Exception e) {
+                        Log.e("CrearActividad", "Error in onActivityResult", e);
+                        Toast.makeText(this, "Error al cargar la imagen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Log.e("CrearActividad", "Selected image URI is null");
+                    Toast.makeText(this, "No se pudo obtener la imagen seleccionada", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Log.d("CrearActividad", "Image selection cancelled or failed");
+                Toast.makeText(this, "Selección de imagen cancelada", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -136,19 +206,53 @@ public class CrearActividad extends AppCompatActivity {
     }
 
     private File uriToFile(Uri uri) {
-        try (InputStream in = getContentResolver().openInputStream(uri)) {
-            if (in == null) return null;
-            File tmp = new File(getCacheDir(), "img_" + UUID.randomUUID() + ".jpg");
-            try (FileOutputStream out = new FileOutputStream(tmp)) {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = in.read(buffer)) > 0) {
-                    out.write(buffer, 0, len);
+        if (uri == null) {
+            Log.e("CrearActividad", "URI is null");
+            return null;
+        }
+
+        Log.d("CrearActividad", "Processing URI: " + uri.toString());
+
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                Log.e("CrearActividad", "InputStream is null for URI: " + uri);
+                return null;
+            }
+
+            // Crear directorio cache si no existe
+            File cacheDir = getCacheDir();
+            if (!cacheDir.exists()) {
+                cacheDir.mkdirs();
+            }
+
+            File tempFile = new File(cacheDir, "temp_image_" + System.currentTimeMillis() + ".jpg");
+
+            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[4096]; // Buffer más grande
+                int bytesRead;
+
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                outputStream.flush();
+                Log.d("CrearActividad", "File created successfully: " + tempFile.getAbsolutePath());
+                Log.d("CrearActividad", "File size: " + tempFile.length() + " bytes");
+
+                return tempFile;
+
+            } finally {
+                try {
+                    inputStream.close();
+                } catch (Exception e) {
+                    Log.e("CrearActividad", "Error closing input stream", e);
                 }
             }
-            return tmp;
+
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("CrearActividad", "Error converting URI to File", e);
+            Toast.makeText(this, "Error al procesar la imagen: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return null;
         }
     }

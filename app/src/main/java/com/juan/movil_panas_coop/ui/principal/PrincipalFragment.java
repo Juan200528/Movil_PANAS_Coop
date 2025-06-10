@@ -1,6 +1,7 @@
 package com.juan.movil_panas_coop.ui.principal;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,6 +24,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.SnapHelper;
+
+import com.juan.movil_panas_coop.InicioSesion;
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.models.Actividad;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
@@ -146,25 +149,64 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         SessionManager sessionManager = new SessionManager(requireContext());
         String token = sessionManager.getToken();
 
+        // ✅ LOGS DE DEBUG PARA EL TOKEN
+        Log.d("PrincipalFragment", "Token exists: " + (token != null));
+        if (token != null) {
+            Log.d("PrincipalFragment", "Token length: " + token.length());
+            Log.d("PrincipalFragment", "Token preview: " + token.substring(0, Math.min(token.length(), 50)) + "...");
+            Log.d("PrincipalFragment", "Token starts with 'eyJ': " + token.startsWith("eyJ"));
+        }
+        Log.d("PrincipalFragment", "User logged in: " + sessionManager.isLoggedIn());
+        Log.d("PrincipalFragment", "User ID: " + sessionManager.getUserId());
+
         if (token == null || token.isEmpty()) {
             Log.e("PrincipalFragment", "No hay token de autenticación");
             Toast.makeText(getContext(), "Error: No se encontró token de autenticación", Toast.LENGTH_LONG).show();
             return;
         }
 
+        String formattedToken = "Bearer " + token;
+        Log.d("PrincipalFragment", "Formatted token: " + formattedToken.substring(0, Math.min(formattedToken.length(), 60)) + "...");
+
         ApiService api = RetrofitClient.getApiService();
-        Call<List<ActividadModel>> call = api.obtenerActividades("Bearer " + token);
+        Call<List<ActividadModel>> call = api.obtenerActividades(formattedToken);
 
         call.enqueue(new Callback<List<ActividadModel>>() {
             @Override
             public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
+                // ✅ LOG DE LA RESPUESTA COMPLETA
+                Log.d("PrincipalFragment", "Response code: " + response.code());
+                Log.d("PrincipalFragment", "Response headers: " + response.headers().toString());
+
                 if (response.isSuccessful() && response.body() != null) {
                     List<ActividadModel> actividadesAPI = response.body();
                     Log.d("PrincipalFragment", "Actividades recibidas de API: " + actividadesAPI.size());
-
                     procesarActividadesDeAPI(actividadesAPI);
                 } else {
                     Log.e("PrincipalFragment", "Error al obtener actividades: " + response.code());
+
+                    // ✅ LOG DEL BODY DE ERROR
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e("PrincipalFragment", "Error body: " + errorBody);
+                        }
+                    } catch (Exception e) {
+                        Log.e("PrincipalFragment", "No se pudo leer error body: " + e.getMessage());
+                    }
+
+                    // ✅ MANEJO ESPECÍFICO DEL 401
+                    if (response.code() == 401) {
+                        Log.e("PrincipalFragment", "TOKEN INVÁLIDO - Redirigiendo al login");
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(getContext(), "Sesión expirada. Inicia sesión nuevamente", Toast.LENGTH_LONG).show();
+                            sessionManager.cerrarSesion();
+                            // Redirigir al login aquí
+                            redirectToLogin();
+                        });
+                        return;
+                    }
+
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(getContext(), "Error al cargar actividades", Toast.LENGTH_SHORT).show();
                         actualizarVisibilidad();
@@ -181,6 +223,13 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 });
             }
         });
+    }
+
+    // ✅ MÉTODO PARA REDIRIGIR AL LOGIN
+    private void redirectToLogin() {
+        Intent intent = new Intent(getActivity(), InicioSesion.class); // Reemplaza con tu Activity de login
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
     }
 
     private void procesarActividadesDeAPI(List<ActividadModel> actividadesAPI) {
