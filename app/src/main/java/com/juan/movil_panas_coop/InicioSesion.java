@@ -34,9 +34,8 @@ public class InicioSesion extends AppCompatActivity {
         setContentView(R.layout.activity_inicio_sesion);
 
         sessionManager = new SessionManager(this);
-        RetrofitClient.init(getApplicationContext()); // Inicializa Retrofit con interceptor y sesión
+        RetrofitClient.init(getApplicationContext());
 
-        // Si ya hay sesión activa, ir directo al menú principal
         if (sessionManager.isLoggedIn()) {
             redirigirAMenu();
             return;
@@ -90,7 +89,6 @@ public class InicioSesion extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     LoginResponse loginResponse = response.body();
 
-                    // Extraer token de la cookie "set-cookie"
                     String tokenCookie = null;
                     for (int i = 0; i < response.headers().size(); i++) {
                         String name = response.headers().name(i);
@@ -108,28 +106,19 @@ public class InicioSesion extends AppCompatActivity {
                         return;
                     }
 
-                    // Guardar token y datos de sesión
                     sessionManager.guardarToken(tokenCookie);
                     sessionManager.guardarSesion(
-                            String.valueOf(loginResponse.getId()),
+                            loginResponse.getId(),
                             loginResponse.getUsername(),
                             loginResponse.getEmail(),
-                            "N/A"  // Si tienes teléfono, cambiar aquí
+                            "N/A"
                     );
 
                     Toast.makeText(InicioSesion.this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show();
                     redirigirAMenu();
 
                 } else {
-                    String mensaje = "Credenciales incorrectas";
-                    try {
-                        if (response.errorBody() != null) {
-                            mensaje = response.errorBody().string();
-                        }
-                    } catch (Exception e) {
-                        mensaje = "Error procesando la respuesta del servidor";
-                    }
-                    Toast.makeText(InicioSesion.this, "Error: " + mensaje, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(InicioSesion.this, "Credenciales incorrectas", Toast.LENGTH_SHORT).show();
                 }
             }
 

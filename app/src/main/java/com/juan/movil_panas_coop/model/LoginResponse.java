@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 public class LoginResponse {
 
     @SerializedName("id")
-    private String id;  // Cambiado a String
+    private String id;  // Changed to String
 
     @SerializedName("username")
     private String username;
@@ -19,9 +19,7 @@ public class LoginResponse {
     @SerializedName("direccion")
     private String address;
 
-    // No incluyo token aquí porque viene por cookie
-
-    // --- Getters y Setters ---
+    // --- Getters and Setters ---
 
     public String getId() {
         return id;

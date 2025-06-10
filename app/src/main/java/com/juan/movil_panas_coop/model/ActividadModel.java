@@ -1,12 +1,13 @@
 package com.juan.movil_panas_coop.model;
 
 import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 
 public class ActividadModel {
 
-    @SerializedName("_id")
-    private String _id;
+    @SerializedName("id")
+    private String id;
 
     @SerializedName("title")
     private String title;
@@ -14,52 +15,25 @@ public class ActividadModel {
     @SerializedName("description")
     private String description;
 
-    @SerializedName("date")
-    private String date;
-
     @SerializedName("place")
     private String place;
 
+    @SerializedName("date")
+    private String date;
+
     @SerializedName("responsible")
-    private List<String> responsible;
+    private List<String> responsible; // Changed to List<String> for better handling
 
-    // ✅ CAMBIO: Usar solo isPromoted (eliminar promocionada y estado)
-    @SerializedName("isPromoted")
-    private boolean isPromoted;
-
-    // ✅ CAMBIO: Agregar campos del backend que faltaban
     @SerializedName("user")
     private String user;
 
-    @SerializedName("asistentes")
-    private List<String> asistentes;
-
-    @SerializedName("promotion")
-    private PromotionModel promotion;
-
-    @SerializedName("createdAt")
-    private String createdAt;
-
-    @SerializedName("updatedAt")
-    private String updatedAt;
-
-    // Campos locales (no se envían al backend)
-    private String imagePath;
-    private boolean assisted;
-    private boolean past;
-
-    public ActividadModel() {}
-
-    // ================================
-    // GETTERS Y SETTERS COMPLETOS
-    // ================================
-
+    // --- Getters and Setters ---
     public String getId() {
-        return _id;
+        return id;
     }
 
-    public void setId(String _id) {
-        this._id = _id;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -78,20 +52,20 @@ public class ActividadModel {
         this.description = description;
     }
 
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
     public String getPlace() {
         return place;
     }
 
     public void setPlace(String place) {
         this.place = place;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public List<String> getResponsible() {
@@ -102,75 +76,11 @@ public class ActividadModel {
         this.responsible = responsible;
     }
 
-    public boolean isPromoted() {
-        return isPromoted;
-    }
-
-    public void setPromoted(boolean promoted) {
-        isPromoted = promoted;
-    }
-
     public String getUser() {
         return user;
     }
 
     public void setUser(String user) {
         this.user = user;
-    }
-
-    public List<String> getAsistentes() {
-        return asistentes;
-    }
-
-    public void setAsistentes(List<String> asistentes) {
-        this.asistentes = asistentes;
-    }
-
-    public PromotionModel getPromotion() {
-        return promotion;
-    }
-
-    public void setPromotion(PromotionModel promotion) {
-        this.promotion = promotion;
-    }
-
-    public String getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(String updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public String getImagePath() {
-        return imagePath;
-    }
-
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
-    }
-
-    public boolean isAssisted() {
-        return assisted;
-    }
-
-    public void setAssisted(boolean assisted) {
-        this.assisted = assisted;
-    }
-
-    public boolean isPast() {
-        return past;
-    }
-
-    public void setPast(boolean past) {
-        this.past = past;
     }
 }

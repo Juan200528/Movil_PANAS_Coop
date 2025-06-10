@@ -72,31 +72,32 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         View root = inflater.inflate(R.layout.fragment_principal, container, false);
 
         recyclerActividades = root.findViewById(R.id.recyclerActividades);
-        tvMisActividades = root.findViewById(R.id.tvMisActividades);
         tvEmptyActividades = root.findViewById(R.id.tvEmptyActividades);
 
         managerDb = new ManagerDb(getContext());
         managerDb.open();
 
-        userId = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE)
-                .getInt("user_id", -1);
-        Log.d("PrincipalFragment", "User ID in PrincipalFragment: " + userId);
-        if (userId == -1) {
-            Log.e("PrincipalFragment", "ERROR: user_id is -1 in SharedPreferences. Check login flow.");
-            Toast.makeText(getContext(), "Error: No se encontró el ID de usuario. Verifique el inicio de sesión.", Toast.LENGTH_LONG).show();
+        SessionManager sessionManager = new SessionManager(requireContext());
+        String userIdString = sessionManager.getUserId();
+        if (userIdString != null) {
+            try {
+                userId = Integer.parseInt(userIdString);
+                Log.d("PrincipalFragment", "User ID retrieved: " + userId);
+            } catch (NumberFormatException e) {
+                Log.e("PrincipalFragment", "Error parsing user_id: " + userIdString, e);
+                Toast.makeText(getContext(), "Error: Invalid user ID format.", Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Log.e("PrincipalFragment", "ERROR: user_id not found in SessionManager.");
+            Toast.makeText(getContext(), "Error: No user ID found. Please log in again.", Toast.LENGTH_LONG).show();
         }
 
-        // Configurar el LinearLayoutManager
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerActividades.setLayoutManager(layoutManager);
-        recyclerActividades.setHasFixedSize(true); // Optimizar con tamaño fijo
+        recyclerActividades.setHasFixedSize(true);
 
-        // Agregar SnapHelper para alinear las tarjetas completamente
         SnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(recyclerActividades);
-
-        // Ajustar el margen inferior para evitar superposición con la barra de navegación
-        adjustRecyclerViewMargin();
 
         itemList = new ArrayList<>();
         actividadAdapter = new ActividadAdapter(itemList, this, this::mostrarDialogoEliminar,
@@ -108,6 +109,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
         return root;
     }
+
 
     private void adjustRecyclerViewMargin() {
         if (recyclerActividades != null) {
