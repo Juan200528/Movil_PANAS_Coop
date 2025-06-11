@@ -15,18 +15,15 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import com.google.gson.Gson;
 import com.juan.movil_panas_coop.api.ApiService;
 import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.utils.SessionManager;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -39,8 +36,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
-
-
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -50,10 +45,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class CrearActividad extends AppCompatActivity {
-
     private static final int PICK_IMAGE = 1;
     private static final int PERM_REQ = 100;
-
     private EditText etTitulo, etDesc, etFecha, etLugar, etResp;
     private ImageButton btnSubir, btnDate;
     private ImageView ivImg;
@@ -65,10 +58,8 @@ public class CrearActividad extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crear_actividad);
-
         api = RetrofitClient.getApiService();
         sessionManager = new SessionManager(this);
-
         etTitulo = findViewById(R.id.etTitulo);
         etDesc = findViewById(R.id.etDescripcion);
         etFecha = findViewById(R.id.etFecha);
@@ -77,10 +68,14 @@ public class CrearActividad extends AppCompatActivity {
         btnSubir = findViewById(R.id.btnSubir);
         btnDate = findViewById(R.id.btnCalendario);
         ivImg = findViewById(R.id.ivActividadImagen);
-
         btnDate.setOnClickListener(v -> showDatePicker());
         btnSubir.setOnClickListener(v -> pickImage());
         findViewById(R.id.btnCrear).setOnClickListener(v -> upload());
+    }
+
+    private void showToastAndLog(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        Log.e("CrearActividad", message); // Puedes usar Log.d(), Log.w(), etc.
     }
 
     private void showDatePicker() {
@@ -98,97 +93,27 @@ public class CrearActividad extends AppCompatActivity {
     }
 
     private void pickImage() {
-        Log.d("CrearActividad", "pickImage() called");
-
         if (!storagePerm()) {
-            Log.d("CrearActividad", "Storage permission not granted, requesting permission");
             String perm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                     ? Manifest.permission.READ_MEDIA_IMAGES
                     : Manifest.permission.READ_EXTERNAL_STORAGE;
             ActivityCompat.requestPermissions(this, new String[]{perm}, PERM_REQ);
         } else {
-            Log.d("CrearActividad", "Storage permission granted, opening gallery");
-            openImageGallery();
-        }
-    }
-
-    private void openImageGallery() {
-        try {
-            // Método preferido para Android moderno
-            Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.setType("image/*");
-
-            // Verificar si hay una app que pueda manejar este intent
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivityForResult(intent, PICK_IMAGE);
-                Log.d("CrearActividad", "Gallery intent started successfully");
-            } else {
-                // Fallback si no hay app de galería
-                Log.w("CrearActividad", "No gallery app found, trying alternative");
-                Intent fallbackIntent = new Intent(Intent.ACTION_GET_CONTENT);
-                fallbackIntent.setType("image/*");
-
-                if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
-                    startActivityForResult(fallbackIntent, PICK_IMAGE);
-                } else {
-                    Toast.makeText(this, "No se encontró una aplicación para seleccionar imágenes", Toast.LENGTH_LONG).show();
-                }
-            }
-
-        } catch (Exception e) {
-            Log.e("CrearActividad", "Error opening image gallery", e);
-            Toast.makeText(this, "Error al abrir la galería: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            i.setType("image/*");
+            startActivityForResult(i, PICK_IMAGE);
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        Log.d("CrearActividad", "onActivityResult - requestCode: " + requestCode +
-                ", resultCode: " + resultCode + ", data: " + (data != null));
-
-        if (requestCode == PICK_IMAGE) {
-            if (resultCode == RESULT_OK && data != null) {
-                Uri selectedImageUri = data.getData();
-
-                if (selectedImageUri != null) {
-                    Log.d("CrearActividad", "Selected image URI: " + selectedImageUri.toString());
-
-                    try {
-                        // Mostrar la imagen en el ImageView
-                        ivImg.setImageURI(selectedImageUri);
-                        Log.d("CrearActividad", "Image displayed in ImageView successfully");
-
-                        // Convertir URI a File en un hilo separado para evitar bloquear UI
-                        new Thread(() -> {
-                            File convertedFile = uriToFile(selectedImageUri);
-
-                            runOnUiThread(() -> {
-                                if (convertedFile != null) {
-                                    imgFile = convertedFile;
-                                    Log.d("CrearActividad", "Image conversion successful");
-                                    Toast.makeText(CrearActividad.this, "Imagen seleccionada correctamente", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Log.e("CrearActividad", "Image conversion failed");
-                                    Toast.makeText(CrearActividad.this, "Error al procesar la imagen seleccionada", Toast.LENGTH_SHORT).show();
-                                    // Limpiar la imagen del ImageView si falló la conversión
-                                    ivImg.setImageResource(R.drawable.ic_launcher_background); // o tu imagen por defecto
-                                }
-                            });
-                        }).start();
-
-                    } catch (Exception e) {
-                        Log.e("CrearActividad", "Error in onActivityResult", e);
-                        Toast.makeText(this, "Error al cargar la imagen: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Log.e("CrearActividad", "Selected image URI is null");
-                    Toast.makeText(this, "No se pudo obtener la imagen seleccionada", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Log.d("CrearActividad", "Image selection cancelled or failed");
-                Toast.makeText(this, "Selección de imagen cancelada", Toast.LENGTH_SHORT).show();
+        if (requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            ivImg.setImageURI(uri);
+            imgFile = uriToFile(uri);
+            if (imgFile == null) {
+                showToastAndLog("No se pudo procesar la imagen seleccionada");
             }
         }
     }
@@ -201,58 +126,24 @@ public class CrearActividad extends AppCompatActivity {
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             pickImage();
         } else {
-            Toast.makeText(this, "Permiso para acceder a imágenes denegado", Toast.LENGTH_SHORT).show();
+            showToastAndLog("Permiso para acceder a imágenes denegado");
         }
     }
 
     private File uriToFile(Uri uri) {
-        if (uri == null) {
-            Log.e("CrearActividad", "URI is null");
-            return null;
-        }
-
-        Log.d("CrearActividad", "Processing URI: " + uri.toString());
-
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            if (inputStream == null) {
-                Log.e("CrearActividad", "InputStream is null for URI: " + uri);
-                return null;
-            }
-
-            // Crear directorio cache si no existe
-            File cacheDir = getCacheDir();
-            if (!cacheDir.exists()) {
-                cacheDir.mkdirs();
-            }
-
-            File tempFile = new File(cacheDir, "temp_image_" + System.currentTimeMillis() + ".jpg");
-
-            try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-                byte[] buffer = new byte[4096]; // Buffer más grande
-                int bytesRead;
-
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-
-                outputStream.flush();
-                Log.d("CrearActividad", "File created successfully: " + tempFile.getAbsolutePath());
-                Log.d("CrearActividad", "File size: " + tempFile.length() + " bytes");
-
-                return tempFile;
-
-            } finally {
-                try {
-                    inputStream.close();
-                } catch (Exception e) {
-                    Log.e("CrearActividad", "Error closing input stream", e);
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) return null;
+            File tmp = new File(getCacheDir(), "img_" + UUID.randomUUID() + ".jpg");
+            try (FileOutputStream out = new FileOutputStream(tmp)) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, len);
                 }
             }
-
+            return tmp;
         } catch (Exception e) {
-            Log.e("CrearActividad", "Error converting URI to File", e);
-            Toast.makeText(this, "Error al procesar la imagen: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
             return null;
         }
     }
@@ -264,43 +155,35 @@ public class CrearActividad extends AppCompatActivity {
         String lugar = etLugar.getText().toString().trim();
         String responsablesStr = etResp.getText().toString().trim();
 
-        // Validaciones
         if (TextUtils.isEmpty(titulo) || TextUtils.isEmpty(fecha) || TextUtils.isEmpty(lugar)) {
-            Toast.makeText(this, "Título, fecha, y lugar son obligatorios", Toast.LENGTH_SHORT).show();
+            showToastAndLog("Título, fecha, y lugar son obligatorios");
             return;
         }
 
         String token = sessionManager.getToken();
         if (token == null || token.isEmpty()) {
-            Toast.makeText(this, "Token de autenticación faltante. Por favor inicia sesión.", Toast.LENGTH_LONG).show();
+            showToastAndLog("Token de autenticación faltante. Por favor inicia sesión.");
             return;
         }
 
-        // ✅ CREAR MODELO CORRECTAMENTE
         ActividadModel actividad = new ActividadModel();
         actividad.setTitle(titulo);
         actividad.setDescription(descripcion);
-
-        // ✅ MEJOR MANEJO DE FECHA
         actividad.setDate(formatDateForBackend(fecha));
         actividad.setPlace(lugar);
 
-        // ✅ MANEJO DE RESPONSABLES
         if (!responsablesStr.isEmpty()) {
             List<String> responsablesList = Arrays.asList(responsablesStr.split("\\s*,\\s*"));
             actividad.setResponsible(responsablesList);
         }
 
-        // ✅ LLAMADA DIRECTA CON JSON (SIN MULTIPART)
         Call<ActividadModel> call = api.crearActividad("Bearer " + token, actividad);
         call.enqueue(new Callback<ActividadModel>() {
             @Override
             public void onResponse(Call<ActividadModel> call, Response<ActividadModel> response) {
-                // ✅ LIMPIAR ARCHIVO TEMPORAL
                 cleanupTempFile();
-
                 if (response.isSuccessful()) {
-                    Toast.makeText(CrearActividad.this, "Actividad creada exitosamente", Toast.LENGTH_SHORT).show();
+                    showToastAndLog("Actividad creada exitosamente");
                     finish();
                 } else {
                     handleErrorResponse(response);
@@ -309,14 +192,11 @@ public class CrearActividad extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ActividadModel> call, Throwable t) {
-                // ✅ LIMPIAR ARCHIVO TEMPORAL EN ERROR
                 cleanupTempFile();
-                Toast.makeText(CrearActividad.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                showToastAndLog("Error de conexión: " + t.getMessage());
             }
         });
     }
-
-// ✅ AGREGAR ESTOS MÉTODOS HELPER EN CrearActividad.java:
 
     private String formatDateForBackend(String dateStr) {
         try {
@@ -326,7 +206,7 @@ public class CrearActividad extends AppCompatActivity {
             Date date = inputFormat.parse(dateStr);
             return outputFormat.format(date);
         } catch (ParseException e) {
-            return dateStr + "T00:00:00.000Z"; // fallback
+            return dateStr + "T00:00:00.000Z";
         }
     }
 
@@ -343,27 +223,24 @@ public class CrearActividad extends AppCompatActivity {
         try {
             if (response.errorBody() != null) {
                 String errorBody = response.errorBody().string();
-
-                // Manejo específico por código de error
                 switch (response.code()) {
                     case 400:
-                        Toast.makeText(this, "Datos inválidos. Revisa los campos.", Toast.LENGTH_LONG).show();
+                        showToastAndLog("Datos inválidos. Revisa los campos.");
                         break;
                     case 401:
-                        Toast.makeText(this, "No autorizado. Inicia sesión nuevamente.", Toast.LENGTH_LONG).show();
-                        // Opcional: redirigir a login
+                        showToastAndLog("No autorizado. Inicia sesión nuevamente.");
                         break;
                     case 500:
-                        Toast.makeText(this, "Error del servidor. Intenta más tarde.", Toast.LENGTH_LONG).show();
+                        showToastAndLog("Error del servidor. Intenta más tarde.");
                         break;
                     default:
-                        Toast.makeText(this, "Error: " + errorBody, Toast.LENGTH_LONG).show();
+                        showToastAndLog("Error: " + errorBody);
                 }
             } else {
-                Toast.makeText(this, "Error desconocido del servidor", Toast.LENGTH_LONG).show();
+                showToastAndLog("Error desconocido del servidor");
             }
         } catch (Exception e) {
-            Toast.makeText(this, "Error procesando respuesta del servidor", Toast.LENGTH_LONG).show();
+            showToastAndLog("Error procesando respuesta del servidor");
         }
     }
 }

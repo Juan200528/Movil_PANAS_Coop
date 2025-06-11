@@ -182,7 +182,6 @@ public class ManagerDb {
         List<Actividad> actividades = new ArrayList<>();
         Cursor cursor = database.query(Constantes.TABLA_ACTIVIDADES,
                 null, null, null, null, null, null);
-
         while (cursor.moveToNext()) {
             Actividad actividad = new Actividad();
             actividad.setId(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_ACTIVIDAD)));
@@ -190,7 +189,7 @@ public class ManagerDb {
             actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
             actividad.setFecha(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_FECHA)));
             actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-            actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+            actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR))); // Usamos getString()
             actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
             actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
             actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
@@ -228,7 +227,7 @@ public class ManagerDb {
                     actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
                     actividad.setFecha(fechaStr);
                     actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-                    actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+                    actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
                     actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
                     actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
                     actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
@@ -272,7 +271,7 @@ public class ManagerDb {
                     actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
                     actividad.setFecha(fechaStr);
                     actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-                    actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+                    actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
                     actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
                     actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
                     actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
@@ -303,7 +302,7 @@ public class ManagerDb {
             actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
             actividad.setFecha(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_FECHA)));
             actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-            actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+            actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
             actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
             actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
             actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
@@ -516,7 +515,7 @@ public class ManagerDb {
                 actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
                 actividad.setFecha(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_FECHA)));
                 actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-                actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+                actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
                 actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
                 actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
                 actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
@@ -588,7 +587,7 @@ public class ManagerDb {
                         actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
                         actividad.setFecha(fechaStr);
                         actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-                        actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+                        actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
                         actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
                         actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
                         actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
@@ -781,7 +780,7 @@ public class ManagerDb {
             actividad.setDescripcion(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_DESCRIPCION)));
             actividad.setFecha(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_FECHA)));
             actividad.setLugar(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_LUGAR)));
-            actividad.setIdCreador(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
+            actividad.setIdCreador(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ID_CREADOR)));
             actividad.setResponsables(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_RESPONSABLES)));
             actividad.setEstado(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_ESTADO)));
             actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));

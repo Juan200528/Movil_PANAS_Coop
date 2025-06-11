@@ -1,7 +1,6 @@
 package com.juan.movil_panas_coop.ui.principal;
 
 import android.app.Dialog;
-import android.content.Intent;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
@@ -25,11 +25,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.SnapHelper;
 
-import com.juan.movil_panas_coop.InicioSesion;
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.models.Actividad;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
 import com.juan.movil_panas_coop.db.ManagerDb;
+import com.juan.movil_panas_coop.api.ApiService;
+import com.juan.movil_panas_coop.api.RetrofitClient;
+import com.juan.movil_panas_coop.model.ActividadModel;
+import com.juan.movil_panas_coop.utils.SessionManager;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -42,25 +49,15 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import com.juan.movil_panas_coop.api.ApiService;
-import com.juan.movil_panas_coop.api.RetrofitClient;
-import com.juan.movil_panas_coop.model.ActividadModel;
-import com.juan.movil_panas_coop.utils.SessionManager;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class PrincipalFragment extends Fragment implements ActividadAdapter.OnActividadClickListener {
 
     private RecyclerView recyclerActividades;
-    private TextView tvMisActividades;
     private TextView tvEmptyActividades;
     private ActividadAdapter actividadAdapter;
     private ManagerDb managerDb;
     private List<ActividadAdapter.Item> itemList;
-    private int userId;
-
+    private String userId; // Ahora es solo String
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
@@ -75,31 +72,28 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         View root = inflater.inflate(R.layout.fragment_principal, container, false);
 
         recyclerActividades = root.findViewById(R.id.recyclerActividades);
-        tvMisActividades = root.findViewById(R.id.tvMisActividades);
         tvEmptyActividades = root.findViewById(R.id.tvEmptyActividades);
-
         managerDb = new ManagerDb(getContext());
         managerDb.open();
 
-        userId = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE)
-                .getInt("user_id", -1);
-        Log.d("PrincipalFragment", "User ID in PrincipalFragment: " + userId);
-        if (userId == -1) {
-            Log.e("PrincipalFragment", "ERROR: user_id is -1 in SharedPreferences. Check login flow.");
-            Toast.makeText(getContext(), "Error: No se encontró el ID de usuario. Verifique el inicio de sesión.", Toast.LENGTH_LONG).show();
+        SessionManager sessionManager = new SessionManager(requireContext());
+        String userIdString = sessionManager.getUserId();
+
+        if (userIdString != null) {
+            // Usamos directamente el String del ID
+            userId = userIdString;
+            Log.d("PrincipalFragment", "User ID retrieved: " + userId);
+        } else {
+            Log.e("PrincipalFragment", "ERROR: user_id not found in SessionManager.");
+            Toast.makeText(getContext(), "Error: No user ID found. Please log in again.", Toast.LENGTH_LONG).show();
         }
 
-        // Configurar el LinearLayoutManager
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerActividades.setLayoutManager(layoutManager);
-        recyclerActividades.setHasFixedSize(true); // Optimizar con tamaño fijo
+        recyclerActividades.setHasFixedSize(true);
 
-        // Agregar SnapHelper para alinear las tarjetas completamente
         SnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(recyclerActividades);
-
-        // Ajustar el margen inferior para evitar superposición con la barra de navegación
-        adjustRecyclerViewMargin();
 
         itemList = new ArrayList<>();
         actividadAdapter = new ActividadAdapter(itemList, this, this::mostrarDialogoEliminar,
@@ -114,13 +108,11 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private void adjustRecyclerViewMargin() {
         if (recyclerActividades != null) {
-            // Obtener la altura de la barra de navegación
             int navigationBarHeight = getNavigationBarHeight();
             ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) recyclerActividades.getLayoutParams();
-            params.bottomMargin = navigationBarHeight + 150; // Mantener el margen inferior ajustado a 150
+            params.bottomMargin = navigationBarHeight + 150;
             recyclerActividades.setLayoutParams(params);
 
-            // Asegurar que el RecyclerView no se corte por la barra de navegación
             ViewCompat.setOnApplyWindowInsetsListener(recyclerActividades, (v, insets) -> {
                 int insetBottom = insets.getSystemWindowInsetBottom();
                 if (insetBottom > 0) {
@@ -141,23 +133,11 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         return realHeight > usableHeight ? realHeight - usableHeight : 0;
     }
 
-
-
     public void cargarActividades() {
         Log.d("PrincipalFragment", "=== INICIO cargarActividades() desde API ===");
 
         SessionManager sessionManager = new SessionManager(requireContext());
         String token = sessionManager.getToken();
-
-        // ✅ LOGS DE DEBUG PARA EL TOKEN
-        Log.d("PrincipalFragment", "Token exists: " + (token != null));
-        if (token != null) {
-            Log.d("PrincipalFragment", "Token length: " + token.length());
-            Log.d("PrincipalFragment", "Token preview: " + token.substring(0, Math.min(token.length(), 50)) + "...");
-            Log.d("PrincipalFragment", "Token starts with 'eyJ': " + token.startsWith("eyJ"));
-        }
-        Log.d("PrincipalFragment", "User logged in: " + sessionManager.isLoggedIn());
-        Log.d("PrincipalFragment", "User ID: " + sessionManager.getUserId());
 
         if (token == null || token.isEmpty()) {
             Log.e("PrincipalFragment", "No hay token de autenticación");
@@ -165,48 +145,17 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             return;
         }
 
-        String formattedToken = "Bearer " + token;
-        Log.d("PrincipalFragment", "Formatted token: " + formattedToken.substring(0, Math.min(formattedToken.length(), 60)) + "...");
-
         ApiService api = RetrofitClient.getApiService();
-        Call<List<ActividadModel>> call = api.obtenerActividades(formattedToken);
-
+        Call<List<ActividadModel>> call = api.obtenerActividades("Bearer " + token);
         call.enqueue(new Callback<List<ActividadModel>>() {
             @Override
             public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
-                // ✅ LOG DE LA RESPUESTA COMPLETA
-                Log.d("PrincipalFragment", "Response code: " + response.code());
-                Log.d("PrincipalFragment", "Response headers: " + response.headers().toString());
-
                 if (response.isSuccessful() && response.body() != null) {
                     List<ActividadModel> actividadesAPI = response.body();
                     Log.d("PrincipalFragment", "Actividades recibidas de API: " + actividadesAPI.size());
                     procesarActividadesDeAPI(actividadesAPI);
                 } else {
                     Log.e("PrincipalFragment", "Error al obtener actividades: " + response.code());
-
-                    // ✅ LOG DEL BODY DE ERROR
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            Log.e("PrincipalFragment", "Error body: " + errorBody);
-                        }
-                    } catch (Exception e) {
-                        Log.e("PrincipalFragment", "No se pudo leer error body: " + e.getMessage());
-                    }
-
-                    // ✅ MANEJO ESPECÍFICO DEL 401
-                    if (response.code() == 401) {
-                        Log.e("PrincipalFragment", "TOKEN INVÁLIDO - Redirigiendo al login");
-                        requireActivity().runOnUiThread(() -> {
-                            Toast.makeText(getContext(), "Sesión expirada. Inicia sesión nuevamente", Toast.LENGTH_LONG).show();
-                            sessionManager.cerrarSesion();
-                            // Redirigir al login aquí
-                            redirectToLogin();
-                        });
-                        return;
-                    }
-
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(getContext(), "Error al cargar actividades", Toast.LENGTH_SHORT).show();
                         actualizarVisibilidad();
@@ -225,18 +174,11 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         });
     }
 
-    // ✅ MÉTODO PARA REDIRIGIR AL LOGIN
-    private void redirectToLogin() {
-        Intent intent = new Intent(getActivity(), InicioSesion.class); // Reemplaza con tu Activity de login
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-    }
-
     private void procesarActividadesDeAPI(List<ActividadModel> actividadesAPI) {
         executorService.execute(() -> {
             List<ActividadAdapter.Item> tempItemList = new ArrayList<>();
-
             List<Actividad> actividadesConvertidas = new ArrayList<>();
+
             for (ActividadModel actividadAPI : actividadesAPI) {
                 Actividad actividad = convertirAPIaActividad(actividadAPI);
                 actividadesConvertidas.add(actividad);
@@ -246,6 +188,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             if (!actividadesConvertidas.isEmpty()) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
                 String fechaHoyStr = sdf.format(new Date());
+
                 Date fechaHoy;
                 try {
                     fechaHoy = sdf.parse(fechaHoyStr);
@@ -314,7 +257,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 itemList.clear();
                 itemList.addAll(tempItemList);
                 Log.d("PrincipalFragment", "Total de ítems cargados desde API: " + itemList.size());
-
                 actividadAdapter.notifyDataSetChanged();
                 actualizarVisibilidad();
 
@@ -328,11 +270,20 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private Actividad convertirAPIaActividad(ActividadModel actividadAPI) {
         Actividad actividad = new Actividad();
-        actividad.setId(actividadAPI.getId() != null ? Integer.parseInt(actividadAPI.getId()) : 0);
+
+        // Aquí asumimos que setId() acepta String o Integer
+        try {
+            actividad.setId(Integer.parseInt(actividadAPI.getId())); // Puedes dejarlo así si viene numérico
+        } catch (NumberFormatException ignored) {
+            actividad.setId(0); // o manejar como prefieras
+        }
+
         actividad.setTitulo(actividadAPI.getTitle());
         actividad.setDescripcion(actividadAPI.getDescription());
         actividad.setLugar(actividadAPI.getPlace());
-        actividad.setIdCreador(userId);
+
+        // ✅ Este es el cambio principal: usamos userId como String
+        actividad.setIdCreador(userId); // <-- Esto debe ser String en la clase Actividad
 
         if (actividadAPI.getDate() != null) {
             actividad.setFecha(convertirFechaISOaLocal(actividadAPI.getDate()));
@@ -375,7 +326,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         }
     }
 
-
     private void adjustScrollBehavior() {
         if (recyclerActividades != null && recyclerActividades.getAdapter() != null) {
             int itemCount = recyclerActividades.getAdapter().getItemCount();
@@ -385,22 +335,20 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             int navigationBarHeight = getNavigationBarHeight();
             int usableHeight = screenHeight - navigationBarHeight;
 
-            // Estimar la altura de una tarjeta (aproximadamente 150dp + márgenes/padding)
             float dpToPx = getResources().getDisplayMetrics().density;
-            int itemHeight = (int) (150 * dpToPx) + 32; // 150dp + 16dp de margen superior + 16dp de margen inferior
+            int itemHeight = (int) (150 * dpToPx) + 32;
 
             int totalHeight = itemCount * itemHeight;
 
-            // Si hay una sola actividad y su altura es menor o igual a la altura usable, deshabilitar scroll
             if (itemCount <= 1 && totalHeight <= usableHeight) {
-                recyclerActividades.setNestedScrollingEnabled(false); // Deshabilitar scroll
+                recyclerActividades.setNestedScrollingEnabled(false);
                 ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
-                params.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Ajustar altura al contenido
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
                 recyclerActividades.setLayoutParams(params);
             } else {
-                recyclerActividades.setNestedScrollingEnabled(true); // Habilitar scroll
+                recyclerActividades.setNestedScrollingEnabled(true);
                 ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
-                params.height = ViewGroup.LayoutParams.MATCH_PARENT; // Restaurar altura completa
+                params.height = ViewGroup.LayoutParams.MATCH_PARENT;
                 recyclerActividades.setLayoutParams(params);
             }
         }
@@ -452,6 +400,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         etEditarResponsables.setText(actividad.getResponsables() != null ? actividad.getResponsables() : "");
 
         ivCerrar.setOnClickListener(v -> dialog.dismiss());
+
         btnGuardarCambios.setOnClickListener(v -> {
             actividad.setTitulo(etEditarTitulo.getText().toString());
             actividad.setDescripcion(etEditarDescripcion.getText().toString());
@@ -460,7 +409,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             actividad.setLugar(etEditarLugar.getText().toString());
             actividad.setResponsables(etEditarResponsables.getText().toString());
 
-            // Actualizar el estado de pasada después de editar la fecha
             try {
                 Date currentDate = new Date();
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -468,7 +416,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 actividad.setPasada(actividadDate.before(currentDate));
             } catch (ParseException e) {
                 Log.e("PrincipalFragment", "Error al parsear la nueva fecha: " + nuevaFecha, e);
-                actividad.setPasada(false); // Por defecto, no pasada si hay error
+                actividad.setPasada(false);
             }
 
             managerDb.actualizarActividad(actividad);
@@ -518,7 +466,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         }
 
         btnVolver.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
     }
 

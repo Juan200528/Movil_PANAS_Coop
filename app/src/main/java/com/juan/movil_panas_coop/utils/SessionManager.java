@@ -10,7 +10,7 @@ public class SessionManager {
     private static final String KEY_USERNAME = "username";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_PHONE = "phone";
-    private static final String KEY_ADDRESS = "address"; // Nueva clave
+    private static final String KEY_ADDRESS = "address";
     private static final String KEY_LOGGED_IN = "logged_in";
     private static final String KEY_TOKEN = "auth_token";
 
@@ -20,7 +20,6 @@ public class SessionManager {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
     }
 
-    // Guardar los datos de sesión
     public void guardarSesion(String id, String username, String email, String phone) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_USER_ID, id);
@@ -31,43 +30,18 @@ public class SessionManager {
         editor.apply();
     }
 
-    // Guardar dirección (por separado)
-    public void guardarAddress(String address) {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(KEY_ADDRESS, address);
-        editor.apply();
-    }
-
-    // Obtener dirección
-    public String getAddress() {
-        return sharedPreferences.getString(KEY_ADDRESS, "");
-    }
-
-    // Guardar el token de sesión (cookie)
     public void guardarToken(String token) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(KEY_TOKEN, token);
         editor.apply();
     }
 
-    // Obtener el token guardado
-    public String getToken() {
-        return sharedPreferences.getString(KEY_TOKEN, null);
-    }
-
-    // Verificar si el usuario ha iniciado sesión
-    public boolean isLoggedIn() {
-        return sharedPreferences.getBoolean(KEY_LOGGED_IN, false);
-    }
-
-    // Cerrar sesión limpiando todas las preferencias
-    public void cerrarSesion() {
+    public void guardarAddress(String address) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.clear();
+        editor.putString(KEY_ADDRESS, address);
         editor.apply();
     }
 
-    // Getters para los datos guardados
     public String getUserId() {
         return sharedPreferences.getString(KEY_USER_ID, null);
     }
@@ -82,5 +56,29 @@ public class SessionManager {
 
     public String getPhone() {
         return sharedPreferences.getString(KEY_PHONE, null);
+    }
+
+    public String getAddress() {
+        return sharedPreferences.getString(KEY_ADDRESS, null);
+    }
+
+    public String getToken() {
+        return sharedPreferences.getString(KEY_TOKEN, null);
+    }
+
+    public boolean isLoggedIn() {
+        return sharedPreferences.getBoolean(KEY_LOGGED_IN, false);
+    }
+
+    public void cerrarSesion() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+    }
+
+    // ✅ Nuevo método agregado
+    public String fetchAuthToken() {
+        String token = getToken();
+        return (token != null && !token.isEmpty()) ? "Bearer " + token : null;
     }
 }
