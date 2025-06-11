@@ -15,18 +15,15 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import com.google.gson.Gson;
 import com.juan.movil_panas_coop.api.ApiService;
 import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.utils.SessionManager;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -39,8 +36,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
-
-
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -50,10 +45,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class CrearActividad extends AppCompatActivity {
-
     private static final int PICK_IMAGE = 1;
     private static final int PERM_REQ = 100;
-
     private EditText etTitulo, etDesc, etFecha, etLugar, etResp;
     private ImageButton btnSubir, btnDate;
     private ImageView ivImg;
@@ -65,10 +58,8 @@ public class CrearActividad extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crear_actividad);
-
         api = RetrofitClient.getApiService();
         sessionManager = new SessionManager(this);
-
         etTitulo = findViewById(R.id.etTitulo);
         etDesc = findViewById(R.id.etDescripcion);
         etFecha = findViewById(R.id.etFecha);
@@ -77,10 +68,14 @@ public class CrearActividad extends AppCompatActivity {
         btnSubir = findViewById(R.id.btnSubir);
         btnDate = findViewById(R.id.btnCalendario);
         ivImg = findViewById(R.id.ivActividadImagen);
-
         btnDate.setOnClickListener(v -> showDatePicker());
         btnSubir.setOnClickListener(v -> pickImage());
         findViewById(R.id.btnCrear).setOnClickListener(v -> upload());
+    }
+
+    private void showToastAndLog(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        Log.e("CrearActividad", message); // Puedes usar Log.d(), Log.w(), etc.
     }
 
     private void showDatePicker() {
@@ -118,7 +113,7 @@ public class CrearActividad extends AppCompatActivity {
             ivImg.setImageURI(uri);
             imgFile = uriToFile(uri);
             if (imgFile == null) {
-                Toast.makeText(this, "No se pudo procesar la imagen seleccionada", Toast.LENGTH_SHORT).show();
+                showToastAndLog("No se pudo procesar la imagen seleccionada");
             }
         }
     }
@@ -131,7 +126,7 @@ public class CrearActividad extends AppCompatActivity {
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             pickImage();
         } else {
-            Toast.makeText(this, "Permiso para acceder a imágenes denegado", Toast.LENGTH_SHORT).show();
+            showToastAndLog("Permiso para acceder a imágenes denegado");
         }
     }
 
@@ -160,43 +155,35 @@ public class CrearActividad extends AppCompatActivity {
         String lugar = etLugar.getText().toString().trim();
         String responsablesStr = etResp.getText().toString().trim();
 
-        // Validaciones
         if (TextUtils.isEmpty(titulo) || TextUtils.isEmpty(fecha) || TextUtils.isEmpty(lugar)) {
-            Toast.makeText(this, "Título, fecha, y lugar son obligatorios", Toast.LENGTH_SHORT).show();
+            showToastAndLog("Título, fecha, y lugar son obligatorios");
             return;
         }
 
         String token = sessionManager.getToken();
         if (token == null || token.isEmpty()) {
-            Toast.makeText(this, "Token de autenticación faltante. Por favor inicia sesión.", Toast.LENGTH_LONG).show();
+            showToastAndLog("Token de autenticación faltante. Por favor inicia sesión.");
             return;
         }
 
-        // ✅ CREAR MODELO CORRECTAMENTE
         ActividadModel actividad = new ActividadModel();
         actividad.setTitle(titulo);
         actividad.setDescription(descripcion);
-
-        // ✅ MEJOR MANEJO DE FECHA
         actividad.setDate(formatDateForBackend(fecha));
         actividad.setPlace(lugar);
 
-        // ✅ MANEJO DE RESPONSABLES
         if (!responsablesStr.isEmpty()) {
             List<String> responsablesList = Arrays.asList(responsablesStr.split("\\s*,\\s*"));
             actividad.setResponsible(responsablesList);
         }
 
-        // ✅ LLAMADA DIRECTA CON JSON (SIN MULTIPART)
         Call<ActividadModel> call = api.crearActividad("Bearer " + token, actividad);
         call.enqueue(new Callback<ActividadModel>() {
             @Override
             public void onResponse(Call<ActividadModel> call, Response<ActividadModel> response) {
-                // ✅ LIMPIAR ARCHIVO TEMPORAL
                 cleanupTempFile();
-
                 if (response.isSuccessful()) {
-                    Toast.makeText(CrearActividad.this, "Actividad creada exitosamente", Toast.LENGTH_SHORT).show();
+                    showToastAndLog("Actividad creada exitosamente");
                     finish();
                 } else {
                     handleErrorResponse(response);
@@ -205,14 +192,11 @@ public class CrearActividad extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ActividadModel> call, Throwable t) {
-                // ✅ LIMPIAR ARCHIVO TEMPORAL EN ERROR
                 cleanupTempFile();
-                Toast.makeText(CrearActividad.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                showToastAndLog("Error de conexión: " + t.getMessage());
             }
         });
     }
-
-// ✅ AGREGAR ESTOS MÉTODOS HELPER EN CrearActividad.java:
 
     private String formatDateForBackend(String dateStr) {
         try {
@@ -222,7 +206,7 @@ public class CrearActividad extends AppCompatActivity {
             Date date = inputFormat.parse(dateStr);
             return outputFormat.format(date);
         } catch (ParseException e) {
-            return dateStr + "T00:00:00.000Z"; // fallback
+            return dateStr + "T00:00:00.000Z";
         }
     }
 
@@ -239,27 +223,24 @@ public class CrearActividad extends AppCompatActivity {
         try {
             if (response.errorBody() != null) {
                 String errorBody = response.errorBody().string();
-
-                // Manejo específico por código de error
                 switch (response.code()) {
                     case 400:
-                        Toast.makeText(this, "Datos inválidos. Revisa los campos.", Toast.LENGTH_LONG).show();
+                        showToastAndLog("Datos inválidos. Revisa los campos.");
                         break;
                     case 401:
-                        Toast.makeText(this, "No autorizado. Inicia sesión nuevamente.", Toast.LENGTH_LONG).show();
-                        // Opcional: redirigir a login
+                        showToastAndLog("No autorizado. Inicia sesión nuevamente.");
                         break;
                     case 500:
-                        Toast.makeText(this, "Error del servidor. Intenta más tarde.", Toast.LENGTH_LONG).show();
+                        showToastAndLog("Error del servidor. Intenta más tarde.");
                         break;
                     default:
-                        Toast.makeText(this, "Error: " + errorBody, Toast.LENGTH_LONG).show();
+                        showToastAndLog("Error: " + errorBody);
                 }
             } else {
-                Toast.makeText(this, "Error desconocido del servidor", Toast.LENGTH_LONG).show();
+                showToastAndLog("Error desconocido del servidor");
             }
         } catch (Exception e) {
-            Toast.makeText(this, "Error procesando respuesta del servidor", Toast.LENGTH_LONG).show();
+            showToastAndLog("Error procesando respuesta del servidor");
         }
     }
 }

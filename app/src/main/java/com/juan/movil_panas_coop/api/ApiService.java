@@ -18,26 +18,19 @@ import retrofit2.http.Path;
 
 public interface ApiService {
 
-    // ✅ CAMBIO PRINCIPAL: De multipart a JSON directo
-    @POST("api/tasks")
-    Call<ActividadModel> crearActividad(
-            @Header("Authorization") String authToken,
-            @Body ActividadModel actividad  // Cambio principal aquí
-    );
-
-    @GET("api/tasks")
-    Call<List<ActividadModel>> obtenerActividades(@Header("Authorization") String token);
-
-
-    @DELETE("api/tasks/{id}")
-    Call<ResponseBody> deleteTask(@Path("id") String id, @Header("Authorization") String token);
-
+    // 🔐 Registro de usuario
     @POST("api/auth/register")
     Call<LoginResponse> register(@Body User user);
 
+    // 🔑 Inicio de sesión
     @POST("api/auth/login")
     Call<LoginResponse> login(@Body User user);
 
+    // 🚪 Cerrar sesión
+    @POST("api/auth/logout")
+    Call<Void> logout();
+
+    // 👤 Actualizar datos del usuario
     @PUT("users/{id}")
     Call<User> updateUser(
             @Path("id") int id,
@@ -45,7 +38,25 @@ public interface ApiService {
             @Header("Authorization") String token
     );
 
-    @POST("api/auth/logout")
-    Call<Void> logout();
+    // 📋 Obtener lista de mis actividades
+    @GET("api/tasks")
+    Call<List<ActividadModel>> obtenerActividades(@Header("Authorization") String token);
 
+    // 🧑‍🤝‍🧑 Obtener lista de actividades de otros usuarios
+    @GET("/api/tasks/others")
+    Call<List<ActividadModel>> obtenerActividadesOtrosUsuarios(@Header("Authorization") String token);
+
+    // ➕ Crear nueva actividad
+    @POST("api/tasks")
+    Call<ActividadModel> crearActividad(
+            @Header("Authorization") String authToken,
+            @Body ActividadModel actividad
+    );
+
+    // ❌ Eliminar una actividad por ID
+    @DELETE("api/tasks/{id}")
+    Call<ResponseBody> deleteTask(
+            @Path("id") String id,
+            @Header("Authorization") String token
+    );
 }

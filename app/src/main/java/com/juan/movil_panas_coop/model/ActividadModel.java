@@ -24,9 +24,6 @@ public class ActividadModel {
     @SerializedName("responsible")
     private List<String> responsible; // Changed to List<String> for better handling
 
-    @SerializedName("user")
-    private String user;
-
     // --- Getters and Setters ---
     public String getId() {
         return id;
@@ -74,13 +71,5 @@ public class ActividadModel {
 
     public void setResponsible(List<String> responsible) {
         this.responsible = responsible;
-    }
-
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
     }
 }
