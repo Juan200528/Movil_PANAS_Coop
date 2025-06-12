@@ -3,6 +3,7 @@ package com.juan.movil_panas_coop;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
@@ -48,7 +49,7 @@ public class Registro extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
 
-        // Configurar campos de contraseña para mostrar/ocultar
+        // Configurar campos de contraseña para mostrar/ocultar SOLO AL MANTENER PRESIONADO
         setupPasswordField(passwordEditText);
         setupPasswordField(confirmPasswordEditText);
 
@@ -65,22 +66,40 @@ public class Registro extends AppCompatActivity {
 
         editText.setOnTouchListener((v, event) -> {
             final int DRAWABLE_RIGHT = 2;
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (event.getRawX() >= (editText.getRight() - editText.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width() - editText.getCompoundDrawablePadding())) {
-                    if (editText.getTransformationMethod() == null) {
-                        // Ocultar contraseña
-                        editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
-                    } else {
+            Drawable drawableRight = editText.getCompoundDrawables()[DRAWABLE_RIGHT];
+
+            // Si no hay ícono dibujable a la derecha, salir
+            if (drawableRight == null) return false;
+
+            // Calcular si el toque está dentro del área del ícono derecho
+            int touchX = (int) event.getX();
+            int totalPaddingRight = editText.getPaddingRight() + editText.getCompoundDrawablePadding();
+            int iconRightBound = editText.getRight() - drawableRight.getBounds().width() - totalPaddingRight;
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (touchX >= iconRightBound) {
                         // Mostrar contraseña
                         editText.setTransformationMethod(null);
                         editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_on, 0);
+                        editText.setSelection(editText.getText().length());
+                        return true;
                     }
-                    editText.setSelection(editText.getText().length());
-                    return true;
-                }
+                    break;
+
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (touchX >= iconRightBound) {
+                        // Ocultar contraseña
+                        editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
+                        editText.setSelection(editText.getText().length());
+                        return true;
+                    }
+                    break;
             }
-            return false;
+
+            return false; // Dejar que otros eventos pasen normalmente
         });
     }
 
