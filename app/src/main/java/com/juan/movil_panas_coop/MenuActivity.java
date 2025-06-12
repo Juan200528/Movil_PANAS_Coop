@@ -13,11 +13,15 @@ import com.juan.movil_panas_coop.ui.actividades.FragmentActPanel;
 import com.juan.movil_panas_coop.ui.comunidades.ComunidadesFragment;
 import com.juan.movil_panas_coop.ui.perfil.PerfilFragment;
 import com.juan.movil_panas_coop.ui.principal.PrincipalFragment;
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 
 public class MenuActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private FloatingActionButton fabCreateActivity;
+    private FirebaseAnalytics mFirebaseAnalytics;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +59,7 @@ public class MenuActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             loadFragment(new PrincipalFragment());
         }
+
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment = null;

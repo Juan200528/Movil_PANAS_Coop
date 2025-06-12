@@ -160,6 +160,25 @@ public class CrearActividad extends AppCompatActivity {
             return;
         }
 
+        // Validación de que la fecha no sea anterior a hoy
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        try {
+            Date inputDate = sdf.parse(fecha);
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+
+            if (inputDate.before(today.getTime())) {
+                showToastAndLog("No puedes seleccionar una fecha anterior a hoy");
+                return;
+            }
+        } catch (ParseException e) {
+            showToastAndLog("Formato de fecha inválido");
+            return;
+        }
+
         String token = sessionManager.getToken();
         if (token == null || token.isEmpty()) {
             showToastAndLog("Token de autenticación faltante. Por favor inicia sesión.");
