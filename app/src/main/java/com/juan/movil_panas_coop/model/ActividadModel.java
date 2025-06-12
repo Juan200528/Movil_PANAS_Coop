@@ -24,6 +24,12 @@ public class ActividadModel {
     @SerializedName("responsible")
     private List<String> responsible; // Changed to List<String> for better handling
 
+    @SerializedName("isPromoted")
+    private boolean isPromoted;
+
+    @SerializedName("promotion")
+    private Promotion promotion;
+
     // --- Getters and Setters ---
     public String getId() {
         return id;
@@ -31,6 +37,15 @@ public class ActividadModel {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public class Promotion {
+        @SerializedName("startDate")
+        private String startDate;
+
+        @SerializedName("endDate")
+        private String endDate;
+        // Getters y Setters
     }
 
     public String getTitle() {

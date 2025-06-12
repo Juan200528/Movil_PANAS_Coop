@@ -13,9 +13,9 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
@@ -24,7 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.SnapHelper;
-
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.models.Actividad;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
@@ -36,7 +35,6 @@ import com.juan.movil_panas_coop.utils.SessionManager;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,7 +49,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PrincipalFragment extends Fragment implements ActividadAdapter.OnActividadClickListener {
-
     private RecyclerView recyclerActividades;
     private TextView tvEmptyActividades;
     private ActividadAdapter actividadAdapter;
@@ -70,7 +67,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_principal, container, false);
-
         recyclerActividades = root.findViewById(R.id.recyclerActividades);
         tvEmptyActividades = root.findViewById(R.id.tvEmptyActividades);
         managerDb = new ManagerDb(getContext());
@@ -78,9 +74,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
         SessionManager sessionManager = new SessionManager(requireContext());
         String userIdString = sessionManager.getUserId();
-
         if (userIdString != null) {
-            // Usamos directamente el String del ID
             userId = userIdString;
             Log.d("PrincipalFragment", "User ID retrieved: " + userId);
         } else {
@@ -91,32 +85,34 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerActividades.setLayoutManager(layoutManager);
         recyclerActividades.setHasFixedSize(true);
-
         SnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(recyclerActividades);
+
+        adjustRecyclerViewMargin(); // Nuevo
 
         itemList = new ArrayList<>();
         actividadAdapter = new ActividadAdapter(itemList, this, this::mostrarDialogoEliminar,
                 this::mostrarDialogoEditar, this::mostrarDialogoDetalles);
         actividadAdapter.setManagerDb(managerDb);
         recyclerActividades.setAdapter(actividadAdapter);
-
         cargarActividades();
-
         return root;
     }
 
     private void adjustRecyclerViewMargin() {
         if (recyclerActividades != null) {
             int navigationBarHeight = getNavigationBarHeight();
+            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height); // Asegúrate de tener este dimen
+            int totalBottomMargin = navigationBarHeight + bottomNavHeight;
+
             ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) recyclerActividades.getLayoutParams();
-            params.bottomMargin = navigationBarHeight + 150;
+            params.bottomMargin = totalBottomMargin;
             recyclerActividades.setLayoutParams(params);
 
             ViewCompat.setOnApplyWindowInsetsListener(recyclerActividades, (v, insets) -> {
                 int insetBottom = insets.getSystemWindowInsetBottom();
                 if (insetBottom > 0) {
-                    params.bottomMargin = insetBottom + 150;
+                    params.bottomMargin = insetBottom + bottomNavHeight;
                     recyclerActividades.setLayoutParams(params);
                 }
                 return insets.consumeSystemWindowInsets();
@@ -135,10 +131,8 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     public void cargarActividades() {
         Log.d("PrincipalFragment", "=== INICIO cargarActividades() desde API ===");
-
         SessionManager sessionManager = new SessionManager(requireContext());
         String token = sessionManager.getToken();
-
         if (token == null || token.isEmpty()) {
             Log.e("PrincipalFragment", "No hay token de autenticación");
             Toast.makeText(getContext(), "Error: No se encontró token de autenticación", Toast.LENGTH_LONG).show();
@@ -188,7 +182,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             if (!actividadesConvertidas.isEmpty()) {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
                 String fechaHoyStr = sdf.format(new Date());
-
                 Date fechaHoy;
                 try {
                     fechaHoy = sdf.parse(fechaHoyStr);
@@ -205,7 +198,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                         actividadesActuales.add(actividad);
                         continue;
                     }
-
                     try {
                         Date actividadDate = sdf.parse(actividad.getFecha());
                         if (actividadDate.before(fechaHoy)) {
@@ -259,7 +251,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 Log.d("PrincipalFragment", "Total de ítems cargados desde API: " + itemList.size());
                 actividadAdapter.notifyDataSetChanged();
                 actualizarVisibilidad();
-
                 if (!itemList.isEmpty()) {
                     recyclerActividades.scrollToPosition(0);
                     adjustScrollBehavior();
@@ -270,29 +261,21 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private Actividad convertirAPIaActividad(ActividadModel actividadAPI) {
         Actividad actividad = new Actividad();
-
-        // Aquí asumimos que setId() acepta String o Integer
         try {
-            actividad.setId(Integer.parseInt(actividadAPI.getId())); // Puedes dejarlo así si viene numérico
+            actividad.setId(Integer.parseInt(actividadAPI.getId()));
         } catch (NumberFormatException ignored) {
-            actividad.setId(0); // o manejar como prefieras
+            actividad.setId(0);
         }
-
         actividad.setTitulo(actividadAPI.getTitle());
         actividad.setDescripcion(actividadAPI.getDescription());
         actividad.setLugar(actividadAPI.getPlace());
-
-        // ✅ Este es el cambio principal: usamos userId como String
-        actividad.setIdCreador(userId); // <-- Esto debe ser String en la clase Actividad
-
+        actividad.setIdCreador(userId);
         if (actividadAPI.getDate() != null) {
             actividad.setFecha(convertirFechaISOaLocal(actividadAPI.getDate()));
         }
-
         if (actividadAPI.getResponsible() != null && !actividadAPI.getResponsible().isEmpty()) {
             actividad.setResponsables(String.join(", ", actividadAPI.getResponsible()));
         }
-
         return actividad;
     }
 
@@ -334,10 +317,8 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             int screenHeight = displayMetrics.heightPixels;
             int navigationBarHeight = getNavigationBarHeight();
             int usableHeight = screenHeight - navigationBarHeight;
-
             float dpToPx = getResources().getDisplayMetrics().density;
             int itemHeight = (int) (150 * dpToPx) + 32;
-
             int totalHeight = itemCount * itemHeight;
 
             if (itemCount <= 1 && totalHeight <= usableHeight) {
@@ -363,11 +344,9 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         Dialog dialog = new Dialog(requireContext());
         dialog.setContentView(R.layout.dialogo_eliminar_actividad);
         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
         ImageView ivCerrar = dialog.findViewById(R.id.ivCerrar);
         Button btnCancelar = dialog.findViewById(R.id.btnCancelar);
         Button btnConfirmar = dialog.findViewById(R.id.btnConfirmar);
-
         ivCerrar.setOnClickListener(v -> dialog.dismiss());
         btnCancelar.setOnClickListener(v -> dialog.dismiss());
         btnConfirmar.setOnClickListener(v -> {
@@ -376,7 +355,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             Toast.makeText(getContext(), "Actividad eliminada", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
-
         dialog.show();
     }
 
@@ -384,7 +362,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         Dialog dialog = new Dialog(requireContext());
         dialog.setContentView(R.layout.dialogo_editar_actividad);
         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
         ImageView ivCerrar = dialog.findViewById(R.id.ivCerrar);
         EditText etEditarTitulo = dialog.findViewById(R.id.etEditarTitulo);
         EditText etEditarDescripcion = dialog.findViewById(R.id.etEditarDescripcion);
@@ -392,15 +369,12 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         EditText etEditarLugar = dialog.findViewById(R.id.etEditarLugar);
         EditText etEditarResponsables = dialog.findViewById(R.id.etEditarResponsables);
         Button btnGuardarCambios = dialog.findViewById(R.id.btnGuardarCambios);
-
         etEditarTitulo.setText(actividad.getTitulo() != null ? actividad.getTitulo() : "");
         etEditarDescripcion.setText(actividad.getDescripcion() != null ? actividad.getDescripcion() : "");
         etEditarFecha.setText(actividad.getFecha() != null ? actividad.getFecha() : "");
         etEditarLugar.setText(actividad.getLugar() != null ? actividad.getLugar() : "");
         etEditarResponsables.setText(actividad.getResponsables() != null ? actividad.getResponsables() : "");
-
         ivCerrar.setOnClickListener(v -> dialog.dismiss());
-
         btnGuardarCambios.setOnClickListener(v -> {
             actividad.setTitulo(etEditarTitulo.getText().toString());
             actividad.setDescripcion(etEditarDescripcion.getText().toString());
@@ -408,7 +382,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             actividad.setFecha(nuevaFecha);
             actividad.setLugar(etEditarLugar.getText().toString());
             actividad.setResponsables(etEditarResponsables.getText().toString());
-
             try {
                 Date currentDate = new Date();
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -418,13 +391,11 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 Log.e("PrincipalFragment", "Error al parsear la nueva fecha: " + nuevaFecha, e);
                 actividad.setPasada(false);
             }
-
             managerDb.actualizarActividad(actividad);
             cargarActividades();
             Toast.makeText(getContext(), "Actividad actualizada", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
-
         dialog.show();
     }
 
@@ -439,6 +410,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
         dialog.getWindow().setAttributes(lp);
 
+        // Inicializar vistas del diálogo
         ImageView ivImagenDetalle = dialog.findViewById(R.id.ivImagenDetalle);
         TextView tvTituloDetalle = dialog.findViewById(R.id.tvTituloDetalle);
         TextView tvDescripcionDetalle = dialog.findViewById(R.id.tvDescripcionDetalle);
@@ -447,12 +419,17 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         TextView tvResponsablesDetalle = dialog.findViewById(R.id.tvResponsablesDetalle);
         Button btnVolver = dialog.findViewById(R.id.btnVolver);
 
+        // Nuevo: Switch para promocionar
+        Switch switchPromocion = dialog.findViewById(R.id.switchPromocion); // Asegúrate que este ID esté en el layout del diálogo
+
+        // Rellenar los campos con la información actual de la actividad
         tvTituloDetalle.setText(actividad.getTitulo() != null ? actividad.getTitulo() : "Sin título");
         tvDescripcionDetalle.setText(actividad.getDescripcion() != null ? actividad.getDescripcion() : "Sin descripción");
         tvFechaDetalle.setText(actividad.getFecha() != null ? actividad.getFecha() : "Sin fecha");
         tvLugarDetalle.setText(actividad.getLugar() != null ? actividad.getLugar() : "Sin lugar");
         tvResponsablesDetalle.setText(actividad.getResponsables() != null ? actividad.getResponsables() : "Sin responsables");
 
+        // Cargar imagen desde archivo usando URI
         String imagenRuta = actividad.getImagenRuta();
         if (imagenRuta != null && !imagenRuta.isEmpty()) {
             File imgFile = new File(imagenRuta);
@@ -465,7 +442,42 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             ivImagenDetalle.setImageResource(R.drawable.default_image);
         }
 
+        // Configurar listener para el botón Volver
         btnVolver.setOnClickListener(v -> dialog.dismiss());
+
+        // Listener del Switch: cuando se active, hacer algo (ej: mandar a API)
+        switchPromocion.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                // Llamar a la API para promocionar esta actividad
+                Toast.makeText(getContext(), "Promocionando: " + actividad.getTitulo(), Toast.LENGTH_SHORT).show();
+
+                ApiService apiService = RetrofitClient.getApiService();
+                SessionManager sessionManager = new SessionManager(requireContext());
+                String token = sessionManager.getToken();
+
+                if (token != null && !token.isEmpty()) {
+                    Call<Void> call = apiService.promoteTask("Bearer " + token, String.valueOf(actividad.getId()));
+                    call.enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.isSuccessful()) {
+                                Toast.makeText(getContext(), "✅ Actividad promocionada", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getContext(), "❌ Error al promocionar", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            Toast.makeText(getContext(), "⚠️ Fallo de conexión", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } else {
+                Toast.makeText(getContext(), "Desactivado: " + actividad.getTitulo(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
         dialog.show();
     }
 

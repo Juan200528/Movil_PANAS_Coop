@@ -17,6 +17,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.view.ViewCompat;
+import android.view.WindowManager;
+import android.util.DisplayMetrics;
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.db.ManagerDb;
 import com.juan.movil_panas_coop.models.Actividad;
@@ -67,7 +70,40 @@ public class ListaFragment extends Fragment implements ActividadAdapterLista.OnA
             adapter.notifyDataSetChanged();
         });
 
+        ajustarRecyclerView(); // <-- Aquí se aplica el estilo visual (márgenes, padding, etc.)
+
         return view;
+    }
+
+
+    private void ajustarRecyclerView() {
+        if (recyclerView != null) {
+            int navigationBarHeight = getNavigationBarHeight();
+            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height); // Debe existir en dimens.xml
+            int totalBottomMargin = navigationBarHeight + bottomNavHeight;
+
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) recyclerView.getLayoutParams();
+            params.bottomMargin = totalBottomMargin;
+            recyclerView.setLayoutParams(params);
+
+            ViewCompat.setOnApplyWindowInsetsListener(recyclerView, (v, insets) -> {
+                int insetBottom = insets.getSystemWindowInsetBottom();
+                if (insetBottom > 0) {
+                    params.bottomMargin = insetBottom + bottomNavHeight;
+                    recyclerView.setLayoutParams(params);
+                }
+                return insets.consumeSystemWindowInsets();
+            });
+        }
+    }
+
+    private int getNavigationBarHeight() {
+        DisplayMetrics metrics = new DisplayMetrics();
+        requireActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int usableHeight = metrics.heightPixels;
+        requireActivity().getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+        int realHeight = metrics.heightPixels;
+        return realHeight > usableHeight ? realHeight - usableHeight : 0;
     }
 
     @Override

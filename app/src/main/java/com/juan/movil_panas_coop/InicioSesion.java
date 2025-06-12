@@ -1,9 +1,16 @@
 package com.juan.movil_panas_coop;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Patterns;
+import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -46,12 +53,66 @@ public class InicioSesion extends AppCompatActivity {
         btnIniciarSesion = findViewById(R.id.btnIniciarSesion);
         tvRegistrarse = findViewById(R.id.tvRegistro);
 
+        // Configurar campo de contraseña
+        etContrasena.setTransformationMethod(PasswordTransformationMethod.getInstance());
+        setupPasswordToggle(etContrasena); // <-- Añadimos el toggle de mostrar/ocultar
+
+        // Aplicar efecto visual al botón
+        setupLoginButtonWithStateEffect();
+
         btnIniciarSesion.setOnClickListener(v -> iniciarSesion());
 
         tvRegistrarse.setOnClickListener(v -> {
             Intent intent = new Intent(InicioSesion.this, Registro.class);
             startActivity(intent);
         });
+
+        String emailRegistrado = getIntent().getStringExtra("email_registrado");
+        if (emailRegistrado != null) {
+            etCorreo.setText(emailRegistrado);
+        }
+    }
+
+    private void setupPasswordToggle(final EditText editText) {
+        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
+        editText.setCompoundDrawablePadding(10);
+
+        editText.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (editText.getRight() - editText.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width() - editText.getCompoundDrawablePadding())) {
+                    if (editText.getTransformationMethod() == null) {
+                        // Ocultar contraseña
+                        editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_off, 0);
+                    } else {
+                        // Mostrar contraseña
+                        editText.setTransformationMethod(null);
+                        editText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_on, 0);
+                    }
+                    editText.setSelection(editText.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    private void setupLoginButtonWithStateEffect() {
+        GradientDrawable gradientDrawableNormal = new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{Color.parseColor("#03683E"), Color.parseColor("#064349")});
+        gradientDrawableNormal.setCornerRadius(80f);
+
+        GradientDrawable gradientDrawablePressed = new GradientDrawable();
+        gradientDrawablePressed.setColor(Color.parseColor("#063449"));
+        gradientDrawablePressed.setCornerRadius(80f);
+
+        StateListDrawable stateListDrawable = new StateListDrawable();
+        stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, gradientDrawablePressed);
+        stateListDrawable.addState(new int[]{}, gradientDrawableNormal);
+
+        btnIniciarSesion.setBackground(stateListDrawable);
     }
 
     private void iniciarSesion() {

@@ -59,4 +59,16 @@ public interface ApiService {
             @Path("id") String id,
             @Header("Authorization") String token
     );
+
+    @GET("api/tasks/promoted")
+    Call<List<ActividadModel>> getPromotedTasks();
+
+    /**
+     * Nuevo método para promocionar una actividad
+     */
+    @POST("api/tasks/{id}/promote")
+    Call<Void> promoteTask(
+            @Header("Authorization") String token,
+            @Path("id") String actividadId
+    );
 }
