@@ -1,7 +1,6 @@
 package com.juan.movil_panas_coop.model;
 
 import com.google.gson.annotations.SerializedName;
-
 import java.util.List;
 
 public class ActividadModel {
@@ -22,9 +21,19 @@ public class ActividadModel {
     private String date;
 
     @SerializedName("responsible")
-    private List<String> responsible; // Changed to List<String> for better handling
+    private List<String> responsible;
 
-    // --- Getters and Setters ---
+    @SerializedName("promocionada")
+    private boolean promocionada;
+
+    @SerializedName("asistido")
+    private boolean asistido;
+
+    @SerializedName("pasada")
+    private boolean pasada;
+
+    // --- Getters y Setters ---
+
     public String getId() {
         return id;
     }
@@ -71,5 +80,29 @@ public class ActividadModel {
 
     public void setResponsible(List<String> responsible) {
         this.responsible = responsible;
+    }
+
+    public boolean isPromocionada() {
+        return promocionada;
+    }
+
+    public void setPromocionada(boolean promocionada) {
+        this.promocionada = promocionada;
+    }
+
+    public boolean isAsistido() {
+        return asistido;
+    }
+
+    public void setAsistido(boolean asistido) {
+        this.asistido = asistido;
+    }
+
+    public boolean isPasada() {
+        return pasada;
+    }
+
+    public void setPasada(boolean pasada) {
+        this.pasada = pasada;
     }
 }

@@ -2,6 +2,7 @@ package com.juan.movil_panas_coop.models;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,10 +18,23 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.juan.movil_panas_coop.R;
+import com.juan.movil_panas_coop.api.ApiService;
+import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.db.ManagerDb;
+import com.juan.movil_panas_coop.model.ActividadModel;
+import com.juan.movil_panas_coop.model.PromotionRequest;
+
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -124,21 +138,56 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             ActividadViewHolder actividadHolder = (ActividadViewHolder) holder;
             Actividad actividad = item.getActividad();
 
-            actividadHolder.tvTituloActividad.setText(actividad.getTitulo() != null ? actividad.getTitulo() : "Sin título");
-            actividadHolder.switchPromocion.setChecked(actividad.isPromocionada());
-            actividadHolder.switchPromocion.setEnabled(!actividad.isPasada());
+            // Map Actividad to ActividadModel
+            ActividadModel actividadModel = new ActividadModel();
+            actividadModel.setId(String.valueOf(actividad.getId()));
+            actividadModel.setTitle(actividad.getTitulo());
+            actividadModel.setDescription(actividad.getDescripcion());
+            actividadModel.setPromocionada(actividad.isPromocionada());
+            actividadModel.setPasada(actividad.isPasada());
+
+            actividadHolder.tvTituloActividad.setText(actividadModel.getTitle() != null ? actividadModel.getTitle() : "Sin título");
+            actividadHolder.switchPromocion.setChecked(actividadModel.isPromocionada());
+            actividadHolder.switchPromocion.setEnabled(!actividadModel.isPasada());
 
             actividadHolder.switchPromocion.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (!actividad.isPasada()) {
-                    actividad.setPromocionada(isChecked);
-                    if (managerDb != null) {
-                        managerDb.open();
-                        managerDb.actualizarActividad(actividad);
-                        managerDb.close();
+                if (!actividadModel.isPasada()) {
+                    if (actividadModel.getId() == null || actividadModel.getId().equals("0")) {
+                        Log.e("ActividadAdapter", "Error: ID de actividad no válido");
+                        Toast.makeText(buttonView.getContext(), "Error: ID de actividad no válido", Toast.LENGTH_SHORT).show();
+                        return;
                     }
+
+                    actividadModel.setPromocionada(isChecked);
+
+                    String startDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+                    String endDate = ""; // Configure end date if needed
+
+                    PromotionRequest request = new PromotionRequest(actividadModel.getId(), isChecked, startDate, endDate);
+
+                    ApiService apiService = RetrofitClient.getApiService();
+                    Call<ResponseBody> call = apiService.promoteTask(actividadModel.getId(), request);
+
+                    call.enqueue(new Callback<ResponseBody>() {
+                        @Override
+                        public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                            if (response.isSuccessful()) {
+                                Toast.makeText(buttonView.getContext(), "Promoción actualizada", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.e("ActividadAdapter", "Error al actualizar promoción: Código HTTP " + response.code());
+                                Toast.makeText(buttonView.getContext(), "Error al actualizar", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<ResponseBody> call, Throwable t) {
+                            Toast.makeText(buttonView.getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             });
 
+            // Handle image loading
             String imagenRuta = actividad.getImagenRuta();
             if (imagenRuta != null && !imagenRuta.isEmpty()) {
                 File imgFile = new File(imagenRuta);
@@ -151,6 +200,7 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 actividadHolder.ivActividadImagen.setImageResource(R.drawable.default_image);
             }
 
+            // Handle click listeners
             actividadHolder.itemView.setOnClickListener(v -> {
                 if (clickListener != null) clickListener.onActividadClick(actividad);
             });
@@ -168,7 +218,7 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                     if (eliminarListener != null) eliminarListener.onEliminarClick(actividad);
                 });
 
-                // Desactivar funcionalidad para actividades pasadas
+                // Disable functionality for past activities
                 actividadHolder.tvAgregarAsistentes.setEnabled(false);
                 actividadHolder.btnPlus.setEnabled(false);
                 actividadHolder.btnCompartir.setEnabled(false);
@@ -188,8 +238,6 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 actividadHolder.btnCompartir.setEnabled(true);
 
                 View.OnClickListener navigateToGestionar = v -> {
-                    // Aquí puedes navegar a un fragmento o actividad para gestionar asistentes
-                    // Por ahora, solo mostramos un Toast
                     Toast.makeText(holder.itemView.getContext(), "Gestionar asistentes", Toast.LENGTH_SHORT).show();
                 };
 
@@ -224,8 +272,8 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 pasadasAdapter.setManagerDb(managerDb);
                 LinearLayoutManager layoutManager = new LinearLayoutManager(holder.itemView.getContext());
                 pasadasHolder.recyclerActividadesPasadas.setLayoutManager(layoutManager);
-                pasadasHolder.recyclerActividadesPasadas.setHasFixedSize(true); // Optimizar
-                pasadasHolder.recyclerActividadesPasadas.setNestedScrollingEnabled(true); // Habilitar scroll anidado
+                pasadasHolder.recyclerActividadesPasadas.setHasFixedSize(true);
+                pasadasHolder.recyclerActividadesPasadas.setNestedScrollingEnabled(true);
                 pasadasHolder.recyclerActividadesPasadas.setAdapter(pasadasAdapter);
             } else {
                 pasadasHolder.recyclerActividadesPasadas.setVisibility(View.GONE);
@@ -238,7 +286,7 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         return itemList.size();
     }
 
-    static class ActividadViewHolder extends RecyclerView.ViewHolder {
+    class ActividadViewHolder extends RecyclerView.ViewHolder {
         TextView tvTituloActividad;
         ImageView ivActividadImagen;
         Button btnVerDetalles;
@@ -265,7 +313,7 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         }
     }
 
-    static class TituloViewHolder extends RecyclerView.ViewHolder {
+    class TituloViewHolder extends RecyclerView.ViewHolder {
         TextView tvTituloSeccion;
 
         public TituloViewHolder(@NonNull View itemView) {
@@ -274,7 +322,7 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         }
     }
 
-    static class PasadasViewHolder extends RecyclerView.ViewHolder {
+    class PasadasViewHolder extends RecyclerView.ViewHolder {
         RecyclerView recyclerActividadesPasadas;
 
         public PasadasViewHolder(@NonNull View itemView) {

@@ -2,6 +2,7 @@ package com.juan.movil_panas_coop.api;
 
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.model.LoginResponse;
+import com.juan.movil_panas_coop.model.PromotionRequest;
 import com.juan.movil_panas_coop.model.User;
 
 import java.util.List;
@@ -59,4 +60,7 @@ public interface ApiService {
             @Path("id") String id,
             @Header("Authorization") String token
     );
+    @PUT("api/tasks/{id}/promote")
+    Call<ResponseBody> promoteTask(@Path("id") String id, @Body PromotionRequest promotionRequest);
+
 }

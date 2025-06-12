@@ -2,6 +2,8 @@ package com.juan.movil_panas_coop.api;
 
 import android.content.Context;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.juan.movil_panas_coop.utils.AuthInterceptor;
 import com.juan.movil_panas_coop.utils.SessionManager;
 
@@ -15,7 +17,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     private static final String BASE_URL = "https://backend-nrpu.onrender.com/";
-    private static volatile Retrofit retrofit = null; // Ensure thread safety
+    private static volatile Retrofit retrofit = null;
     private static volatile ApiService apiService = null;
     private static Context appContext;
 
@@ -37,7 +39,7 @@ public class RetrofitClient {
     public static ApiService getApiService() {
         if (retrofit == null) {
             synchronized (RetrofitClient.class) {
-                if (retrofit == null) { // Double-checked locking
+                if (retrofit == null) {
                     if (appContext == null) {
                         throw new IllegalStateException("RetrofitClient no ha sido inicializado. Llama a RetrofitClient.init(context) antes de usarlo.");
                     }
@@ -48,16 +50,21 @@ public class RetrofitClient {
                     loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
                     OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                            .addInterceptor(new AuthInterceptor(sessionManager)) // Añade token en Authorization header
+                            .addInterceptor(new AuthInterceptor(sessionManager))
                             .addInterceptor(loggingInterceptor)
-                            .connectTimeout(60, TimeUnit.SECONDS)   // Timeout aumentado a 60 segundos
+                            .connectTimeout(60, TimeUnit.SECONDS)
                             .readTimeout(60, TimeUnit.SECONDS)
                             .writeTimeout(60, TimeUnit.SECONDS)
                             .build();
 
+                    // ⚠️ Configuración personalizada de Gson (ignora campos nulos)
+                    Gson gson = new GsonBuilder()
+                            .serializeNulls() // ← quítala si alguna vez la ves (NO incluir)
+                            .create();
+
                     retrofit = new Retrofit.Builder()
                             .baseUrl(BASE_URL)
-                            .addConverterFactory(GsonConverterFactory.create())
+                            .addConverterFactory(GsonConverterFactory.create(gson)) // Usa Gson personalizado
                             .client(okHttpClient)
                             .build();
 
