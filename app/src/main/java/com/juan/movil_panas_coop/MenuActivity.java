@@ -30,24 +30,7 @@ public class MenuActivity extends AppCompatActivity {
         // Depuración: Verificar si el FAB se inicializó
         if (fabCreateActivity != null) {
             Log.d("MenuActivity", "FAB inicializado correctamente");
-
-            // Obtener el alto de la BottomNavigationView dinámicamente
-            int bottomNavHeight = bottomNavigationView.getHeight();
-            if (bottomNavHeight == 0) {
-                // Si el alto no está disponible aún, esperar a que se mida
-                bottomNavigationView.post(() -> {
-                    int height = bottomNavigationView.getHeight();
-                    CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) fabCreateActivity.getLayoutParams();
-                    params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, height + 80); // Añadir 8dp de margen adicional
-                    fabCreateActivity.setLayoutParams(params);
-                    fabCreateActivity.setVisibility(View.VISIBLE);
-                });
-            } else {
-                CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) fabCreateActivity.getLayoutParams();
-                params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, bottomNavHeight + 80); // Añadir 8dp de margen adicional
-                fabCreateActivity.setLayoutParams(params);
-                fabCreateActivity.setVisibility(View.VISIBLE);
-            }
+            fabCreateActivity.setVisibility(View.VISIBLE);
         } else {
             Log.e("MenuActivity", "FAB es null, no se encontró en el layout");
         }

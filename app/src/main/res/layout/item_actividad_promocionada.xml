@@ -67,15 +67,28 @@
                 android:scaleType="centerCrop" />
         </LinearLayout>
 
-    <Button
-        android:id="@+id/btnVerDetallesPromocionada"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="36dp"
-        android:layout_marginTop="10dp"
-        android:backgroundTint="#4CAF50"
-        android:text="Ver Detalles"
-        android:textColor="#FFFFFF" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnVerDetallesPromocionada"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Ver Detalles"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#22C55E"/>
+
+            <Button
+                android:id="@+id/btnAsistirPromocionada"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="Asistir a actividad"
+                android:textColor="#22C55E"
+                app:backgroundTint="#ffff"/>
+        </LinearLayout>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

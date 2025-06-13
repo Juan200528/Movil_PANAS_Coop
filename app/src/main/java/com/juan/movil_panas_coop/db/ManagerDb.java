@@ -232,6 +232,7 @@ public class ManagerDb {
                     actividad.setImagenRuta(cursor.getString(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_IMAGEN_RUTA)));
                     actividad.setPromocionada(cursor.getInt(cursor.getColumnIndexOrThrow(Constantes.COLUMNA_PROMOCIONADA)) == 1);
                     actividad.setAsistido(existeAsistencia(userId, actividad.getId()));
+                    actividad.setPasada(true); // Explicitamente marcar como pasada
                     actividades.add(actividad);
                 }
             } catch (ParseException e) {

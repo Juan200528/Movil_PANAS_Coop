@@ -101,17 +101,20 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private void adjustRecyclerViewMargin() {
         if (recyclerActividades != null) {
-            // Obtener la altura de la barra de navegación
+            // Obtener la altura de la barra de navegación del sistema y la barra inferior
             int navigationBarHeight = getNavigationBarHeight();
+            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height); // Asegúrate de definir esto en res/dimens
+            int totalBottomMargin = navigationBarHeight + bottomNavHeight; // Margen total inferior
+
             ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) recyclerActividades.getLayoutParams();
-            params.bottomMargin = navigationBarHeight + 150; // Mantener el margen inferior ajustado a 150
+            params.bottomMargin = totalBottomMargin; // Ajustar margen inferior al total
             recyclerActividades.setLayoutParams(params);
 
-            // Asegurar que el RecyclerView no se corte por la barra de navegación
+            // Asegurar que el RecyclerView no se corte por la barra de navegación del sistema
             ViewCompat.setOnApplyWindowInsetsListener(recyclerActividades, (v, insets) -> {
                 int insetBottom = insets.getSystemWindowInsetBottom();
                 if (insetBottom > 0) {
-                    params.bottomMargin = insetBottom + 150;
+                    params.bottomMargin = insetBottom + bottomNavHeight; // Ajustar con la barra inferior
                     recyclerActividades.setLayoutParams(params);
                 }
                 return insets.consumeSystemWindowInsets();
@@ -133,7 +136,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             List<ActividadAdapter.Item> tempItemList = new ArrayList<>();
 
             if (userId != -1) {
-                // Fetch all activities for the user
+                // Fetch all non-past activities for the user
                 List<Actividad> allActividades = managerDb.obtenerActividadesPorUsuario(userId);
                 Log.d("PrincipalFragment", "Total actividades recuperadas para userId " + userId + ": " + allActividades.size());
                 for (Actividad actividad : allActividades) {
@@ -146,100 +149,22 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                             ", Promocionada: " + actividad.isPromocionada() +
                             ", Asistido: " + actividad.isAsistido() +
                             ", ImagenRuta: " + actividad.getImagenRuta());
-                }
-
-                // Manually filter non-past activities
-                List<Actividad> noPasadas = new ArrayList<>();
-                Date currentDate = new Date();
-                Log.d("PrincipalFragment", "Fecha actual: " + currentDate);
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            actividad.setPasada(false); // Por defecto, no pasada si la fecha es inválida
-                            noPasadas.add(actividad);
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        Log.d("PrincipalFragment", "Comparando - Actividad Fecha: " + actividadDate + " con Current Fecha: " + currentDate);
-                        if (actividadDate.after(currentDate) || actividadDate.equals(currentDate)) {
-                            actividad.setPasada(false); // Actualizar el estado de pasada
-                            noPasadas.add(actividad);
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                        actividad.setPasada(false); // Por defecto, no pasada si hay error
-                        noPasadas.add(actividad);
+                    if (!actividad.isPasada()) {
+                        tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
                     }
                 }
-                Log.d("PrincipalFragment", "Número de actividades no pasadas: " + noPasadas.size());
-                for (Actividad actividad : noPasadas) {
-                    Log.d("PrincipalFragment", "No pasada - Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado());
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
-                }
 
-                // Sort non-past activities by date (descending)
-                Collections.sort(noPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
-
-                // Manually filter past activities
-                List<Actividad> actividadesPasadas = new ArrayList<>();
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        if (actividadDate.before(currentDate)) {
-                            actividad.setPasada(true); // Actualizar el estado de pasada
-                            actividadesPasadas.add(actividad);
-                            Log.d("PrincipalFragment", "Actividad pasada agregada - Título: " + actividad.getTitulo() +
-                                    ", Fecha: " + actividad.getFecha());
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                    }
-                }
-                Log.d("PrincipalFragment", "Número de actividades pasadas: " + actividadesPasadas.size());
+                // Fetch past activities for the user
+                List<Actividad> actividadesPasadas = managerDb.obtenerActividadesPasadasPorUsuario(userId);
+                Log.d("PrincipalFragment", "Total actividades pasadas recuperadas para userId " + userId + ": " + actividadesPasadas.size());
                 for (Actividad actividad : actividadesPasadas) {
-                    Log.d("PrincipalFragment", "Pasada - Título: " + actividad.getTitulo() +
+                    Log.d("PrincipalFragment", "Pasada - ID: " + actividad.getId() +
+                            ", Título: " + actividad.getTitulo() +
                             ", Fecha: " + actividad.getFecha() +
                             ", idCreador: " + actividad.getIdCreador() +
                             ", isPasada: " + actividad.isPasada() +
                             ", Estado: " + actividad.getEstado());
                 }
-
-                // Sort past activities by date (descending)
-                Collections.sort(actividadesPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
 
                 // Add past activities section if there are any
                 if (!actividadesPasadas.isEmpty()) {
@@ -268,30 +193,68 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private void adjustScrollBehavior() {
         if (recyclerActividades != null && recyclerActividades.getAdapter() != null) {
-            int itemCount = recyclerActividades.getAdapter().getItemCount();
             DisplayMetrics displayMetrics = new DisplayMetrics();
             requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenHeight = displayMetrics.heightPixels;
             int navigationBarHeight = getNavigationBarHeight();
-            int usableHeight = screenHeight - navigationBarHeight;
+            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height);
+            int usableHeight = screenHeight - navigationBarHeight - bottomNavHeight; // Altura usable real
 
-            // Estimar la altura de una tarjeta (aproximadamente 150dp + márgenes/padding)
+            // Factores de conversión
             float dpToPx = getResources().getDisplayMetrics().density;
-            int itemHeight = (int) (150 * dpToPx) + 32; // 150dp + 16dp de margen superior + 16dp de margen inferior
 
-            int totalHeight = itemCount * itemHeight;
+            // Alturas estimadas (en dp, luego convertidas a px)
+            int titleHeight = (int) (40 * dpToPx); // Altura estimada para títulos
+            int activityItemHeight = (int) (150 * dpToPx); // Altura estimada por tarjeta de actividad
+            int marginPadding = (int) (16 * dpToPx); // Margen/padding estimado entre ítems
 
-            // Si hay una sola actividad y su altura es menor o igual a la altura usable, deshabilitar scroll
-            if (itemCount <= 1 && totalHeight <= usableHeight) {
-                recyclerActividades.setNestedScrollingEnabled(false); // Deshabilitar scroll
-                ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
-                params.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Ajustar altura al contenido
-                recyclerActividades.setLayoutParams(params);
-            } else {
-                recyclerActividades.setNestedScrollingEnabled(true); // Habilitar scroll
-                ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
-                params.height = ViewGroup.LayoutParams.MATCH_PARENT; // Restaurar altura completa
-                recyclerActividades.setLayoutParams(params);
+            // Calcular la altura total del contenido
+            int totalHeight = 0;
+            int activityCount = 0;
+            int pastActivityCount = 0;
+
+            for (ActividadAdapter.Item item : itemList) {
+                if (item.getType() == ActividadAdapter.Item.TYPE_TITULO) {
+                    totalHeight += titleHeight + marginPadding;
+                } else if (item.getType() == ActividadAdapter.Item.TYPE_ACTIVIDAD) {
+                    activityCount++;
+                } else if (item.getType() == ActividadAdapter.Item.TYPE_PASADAS) {
+                    List<Actividad> actividadesPasadas = item.getActividadesPasadas();
+                    if (actividadesPasadas != null) {
+                        pastActivityCount = actividadesPasadas.size();
+                    }
+                }
+            }
+
+            totalHeight += activityCount * (activityItemHeight + marginPadding);
+            totalHeight += pastActivityCount * (activityItemHeight + marginPadding);
+
+            // Ajustar la altura máxima para evitar desbordamiento
+            int maxHeight = usableHeight; // Usar toda la altura usable
+            totalHeight = Math.min(totalHeight, maxHeight);
+
+            ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
+            params.height = ViewGroup.LayoutParams.MATCH_PARENT; // Usar toda la altura disponible
+            recyclerActividades.setLayoutParams(params);
+            recyclerActividades.setNestedScrollingEnabled(totalHeight > usableHeight); // Habilitar scroll solo si excede
+
+            // Ajustar el RecyclerView anidado para actividades pasadas
+            for (int i = 0; i < itemList.size(); i++) {
+                if (itemList.get(i).getType() == ActividadAdapter.Item.TYPE_PASADAS) {
+                    View view = recyclerActividades.getChildAt(i);
+                    if (view instanceof RecyclerView) {
+                        RecyclerView nestedRecycler = (RecyclerView) view;
+                        if (nestedRecycler != null) {
+                            List<Actividad> actividadesPasadas = itemList.get(i).getActividadesPasadas();
+                            int nestedHeight = pastActivityCount * (activityItemHeight + marginPadding);
+                            ViewGroup.LayoutParams nestedParams = nestedRecycler.getLayoutParams();
+                            nestedParams.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Permitir que se ajuste al contenido
+                            nestedRecycler.setLayoutParams(nestedParams);
+                            nestedRecycler.setNestedScrollingEnabled(false); // Deshabilitar scroll anidado
+                            nestedRecycler.setClipToPadding(false); // Evitar recorte en los bordes
+                        }
+                    }
+                }
             }
         }
     }
