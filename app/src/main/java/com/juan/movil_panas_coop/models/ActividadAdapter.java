@@ -152,21 +152,23 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
             actividadHolder.switchPromocion.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (!actividadModel.isPasada()) {
-                    // Validar el ID
+                    // Ensure the ID is valid
                     String id = actividadModel.getId();
-                    if (id == null || id.trim().isEmpty() || id.equals("0")) {
-                        Log.d("ActividadAdapter", "ID de actividad asignado: " + actividadModel.getId());
+                    if (id == null || id.equals("0")) {
                         Log.e("ActividadAdapter", "Error: ID de actividad no válido");
-                        Toast.makeText(buttonView.getContext(), "Error: No se puede promocionar esta actividad porque el ID no es válido.", Toast.LENGTH_SHORT).show();
-                        actividadHolder.switchPromocion.setChecked(!isChecked); // Revertir el cambio
+                        Toast.makeText(buttonView.getContext(), "Error: ID de actividad no válido", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Continuar con la lógica de promoción
+                    // Set start and end dates
                     String startDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).format(new Date());
-                    String endDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).format(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000));
+                    String endDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).format(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)); // 30 days later
 
+                    // Create the promotion request
                     PromotionRequest request = new PromotionRequest(id, isChecked, startDate, endDate);
+                    Log.d("PromotionRequest", "ID: " + id + ", Request: " + request.toString());
+
+                    // Make the API call
                     ApiService apiService = RetrofitClient.getApiService();
                     Call<ResponseBody> call = apiService.promoteTask(id, request);
 
