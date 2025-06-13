@@ -13,6 +13,7 @@ import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
@@ -60,7 +61,6 @@ public interface ApiService {
             @Path("id") String id,
             @Header("Authorization") String token
     );
-    @PUT("api/tasks/{id}/promote")
+    @PATCH("api/tasks/{id}/promotion")
     Call<ResponseBody> promoteTask(@Path("id") String id, @Body PromotionRequest promotionRequest);
-
 }

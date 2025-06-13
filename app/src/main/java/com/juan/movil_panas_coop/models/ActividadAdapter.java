@@ -152,21 +152,23 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
             actividadHolder.switchPromocion.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (!actividadModel.isPasada()) {
-                    if (actividadModel.getId() == null || actividadModel.getId().equals("0")) {
+                    // Validar el ID
+                    String id = actividadModel.getId();
+                    if (id == null || id.trim().isEmpty() || id.equals("0")) {
+                        Log.d("ActividadAdapter", "ID de actividad asignado: " + actividadModel.getId());
                         Log.e("ActividadAdapter", "Error: ID de actividad no válido");
-                        Toast.makeText(buttonView.getContext(), "Error: ID de actividad no válido", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(buttonView.getContext(), "Error: No se puede promocionar esta actividad porque el ID no es válido.", Toast.LENGTH_SHORT).show();
+                        actividadHolder.switchPromocion.setChecked(!isChecked); // Revertir el cambio
                         return;
                     }
 
-                    actividadModel.setPromocionada(isChecked);
+                    // Continuar con la lógica de promoción
+                    String startDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).format(new Date());
+                    String endDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).format(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000));
 
-                    String startDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-                    String endDate = ""; // Configure end date if needed
-
-                    PromotionRequest request = new PromotionRequest(actividadModel.getId(), isChecked, startDate, endDate);
-
+                    PromotionRequest request = new PromotionRequest(id, isChecked, startDate, endDate);
                     ApiService apiService = RetrofitClient.getApiService();
-                    Call<ResponseBody> call = apiService.promoteTask(actividadModel.getId(), request);
+                    Call<ResponseBody> call = apiService.promoteTask(id, request);
 
                     call.enqueue(new Callback<ResponseBody>() {
                         @Override
@@ -186,7 +188,6 @@ public class ActividadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                     });
                 }
             });
-
             // Handle image loading
             String imagenRuta = actividad.getImagenRuta();
             if (imagenRuta != null && !imagenRuta.isEmpty()) {
