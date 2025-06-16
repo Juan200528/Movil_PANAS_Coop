@@ -51,7 +51,7 @@ public class PromocionadaViewModel extends ViewModel {
     }
 
     public void promocionarActividad(String actividadId) {
-        String token = "Bearer " + sessionManager.getAuthToken();
+        String token = "Bearer " + sessionManager.getToken();
         apiService.promoteTask(token, actividadId).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
