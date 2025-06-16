@@ -76,17 +76,17 @@ public class ListaViewModel extends ViewModel {
         List<Actividad> lista = new ArrayList<>();
         for (ActividadModel model : actividadesModel) {
             Actividad actividad = new Actividad();
-            actividad.setId(Integer.parseInt(model.getId())); // Convertir String a int
+            actividad.setId(Integer.parseInt(model.getId()));
             actividad.setTitulo(model.getTitle());
             actividad.setDescripcion(model.getDescription());
             actividad.setLugar(model.getPlace());
             actividad.setFecha(model.getDate());
             actividad.setResponsables(String.join(", ", model.getResponsible()));
-            actividad.setEstado(model.getStatus());
+            actividad.setEstado("activo"); // Estado por defecto ya que no existe en el modelo
             actividad.setPromocionada(model.isPromoted());
             actividad.setPasada(false);
             actividad.setAsistido(false);
-            actividad.setImagenRuta(model.getImageUrl());
+            actividad.setImagenRuta(model.getImagenRuta());
             lista.add(actividad);
         }
         return lista;
