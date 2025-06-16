@@ -83,4 +83,12 @@ public class BuscarViewModel extends ViewModel {
             }
         });
     }
+
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
+
+    public ApiService getApiService() {
+        return apiService;
+    }
 }

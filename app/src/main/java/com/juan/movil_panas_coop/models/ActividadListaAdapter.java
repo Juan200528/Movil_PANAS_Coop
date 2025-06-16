@@ -1,12 +1,11 @@
 package com.juan.movil_panas_coop.models;
 
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.model.ActividadModel;
+import com.juan.movil_panas_coop.ui.promocionada.PromocionadaViewModel;
 
 import java.util.List;
 
@@ -52,7 +52,7 @@ public class ActividadListaAdapter extends RecyclerView.Adapter<ActividadListaAd
         notifyDataSetChanged();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView tvTitulo;
         private final ImageView ivImagen;
         private final Button btnVerDetalles;

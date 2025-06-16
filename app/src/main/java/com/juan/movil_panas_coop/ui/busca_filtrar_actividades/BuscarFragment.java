@@ -27,6 +27,7 @@ import com.juan.movil_panas_coop.db.ManagerDb;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.models.Asistente;
 import com.juan.movil_panas_coop.models.BuscarAdapter;
+import com.juan.movil_panas_coop.models.PromocionadaViewModel;
 import com.juan.movil_panas_coop.ui.recordatorio.RecordatorioFragment;
 
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public class BuscarFragment extends Fragment implements
     private BuscarAdapter buscarAdapter;
     private List<ActividadModel> actividadList;
     private BuscarViewModel viewModel;
+    private PromocionadaViewModel promocionadaViewModel;
     private ManagerDb managerDb;
     private int userId;
 
@@ -78,7 +80,7 @@ public class BuscarFragment extends Fragment implements
 
         // Inicializar lista y adaptador
         actividadList = new ArrayList<>();
-        buscarAdapter = new BuscarAdapter(actividadList, this, this, this, this, userId);
+        buscarAdapter = new BuscarAdapter(actividadList, this, this, this, this, userId, promocionadaViewModel);
         buscarAdapter.setManagerDb(managerDb);
 
         // Configurar RecyclerView
@@ -89,40 +91,17 @@ public class BuscarFragment extends Fragment implements
         recyclerViewActividades.setClipToPadding(false);
         recyclerViewActividades.setClipChildren(false);
 
-        // Inicializar ViewModel
+        // Inicializar ViewModels
         viewModel = new ViewModelProvider(this).get(BuscarViewModel.class);
+        promocionadaViewModel = new ViewModelProvider(this).get(PromocionadaViewModel.class);
         viewModel.init(getContext(), userId);
-
-        // Configurar botón de búsqueda
-        btnBuscar.setOnClickListener(v -> {
-            String query = etBuscar.getText().toString().trim();
-            String filtroFecha = obtenerFiltroFecha();
-            String filtroEstado = obtenerFiltroEstado();
-            viewModel.buscarActividades(query, filtroFecha, filtroEstado);
-        });
+        promocionadaViewModel.init(viewModel.getSessionManager(), viewModel.getApiService());
 
         // Observar cambios en LiveData
         viewModel.getActividades().observe(getViewLifecycleOwner(), actividades -> {
             actividadList.clear();
             if (actividades != null) {
                 actividadList.addAll(actividades);
-                buscarAdapter.notifyDataSetChanged();
-            }
-        });
-    }
-
-    private String obtenerFiltroFecha() {
-        if (rbFechaTodas.isChecked()) return "todas";
-        if (rbFechaProximas.isChecked()) return "proximas";
-        if (rbFechaPasadas.isChecked()) return "pasadas";
-        return "todas";
-    }
-
-    private String obtenerFiltroEstado() {
-        if (rbEstadoTodas.isChecked()) return "todas";
-        if (rbEstadoPromocionadas.isChecked()) return "promocionadas";
-        return "todas";
-    
             }
             buscarAdapter.notifyDataSetChanged();
             ajustarAlturaRecyclerView();
