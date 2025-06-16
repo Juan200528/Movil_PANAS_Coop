@@ -421,10 +421,20 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         }
     }
 
-    // In your onFailure callback
+    // Add these imports at the top of the file
+    import retrofit2.Call;
+    import retrofit2.Callback;
+    import retrofit2.Response;
+    
+    // Then modify your onFailure method to use the correct response type
+    // Replace YourResponseType with the actual response type you're expecting from your API
     @Override
-    public void onFailure(Call<YourResponseType> call, Throwable t) {
-        handleFailure(t);
+    public void onFailure(Call<List<Actividad>> call, Throwable t) {
+        if (isAdded() && getActivity() != null) {
+            requireActivity().runOnUiThread(() -> {
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+        }
     }
 
     @Override
