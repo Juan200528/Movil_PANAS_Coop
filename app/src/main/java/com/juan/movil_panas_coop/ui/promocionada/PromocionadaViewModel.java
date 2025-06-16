@@ -20,9 +20,9 @@ public class PromocionadaViewModel extends ViewModel {
     private ApiService apiService;
     private SessionManager sessionManager;
 
-    public void init() {
+    public void init(android.content.Context context) {
         actividadesPromocionadas = new MutableLiveData<>();
-        sessionManager = new SessionManager();
+        sessionManager = new SessionManager(context);
         apiService = new ApiService();
         cargarActividadesPromocionadas();
     }
