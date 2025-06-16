@@ -43,7 +43,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class PrincipalFragment extends Fragment implements ActividadAdapter.OnActividadClickListener {
+public class PrincipalFragment extends Fragment implements ActividadAdapter.OnActividadClickListener, Callback<List<Actividad>> {
 
     private RecyclerView recyclerActividades;
     private TextView tvMisActividades;
@@ -422,6 +422,13 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 // Your error handling code here
                 Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             });
+        }
+    }
+
+    @Override
+    public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
+        if (isAdded() && getActivity() != null) {
+            // Handle successful response
         }
     }
 
