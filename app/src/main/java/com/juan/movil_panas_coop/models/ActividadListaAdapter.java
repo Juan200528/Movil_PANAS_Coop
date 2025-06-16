@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.model.ActividadModel;
-import com.juan.movil_panas_coop.ui.promocionada.PromocionadaViewModel;
+import com.juan.movil_panas_coop.ui.actividad_promocionada.PromocionadaViewModel;
 
 import java.util.List;
 
