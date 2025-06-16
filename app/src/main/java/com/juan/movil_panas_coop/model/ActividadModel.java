@@ -29,6 +29,9 @@ public class ActividadModel {
     @SerializedName("promotion")
     private Promotion promotion;
 
+    @SerializedName("imagePath")
+    private String imagenRuta;
+
     // Nuevo campo local
     private boolean asistido;
 
@@ -103,6 +106,14 @@ public class ActividadModel {
 
     public void setAsistido(boolean asistido) {
         this.asistido = asistido;
+    }
+
+    public String getImagenRuta() {
+        return imagenRuta;
+    }
+
+    public void setImagenRuta(String imagenRuta) {
+        this.imagenRuta = imagenRuta;
     }
 
     // --- Clase interna Promotion ---
