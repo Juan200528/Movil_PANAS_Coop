@@ -50,7 +50,7 @@ public class ListaViewModel extends ViewModel {
         }
 
         isLoading.setValue(true);
-        RetrofitClient.getApiService().getOthersTasks("Bearer " + token)
+        RetrofitClient.getApiService().obtenerActividadesOtrosUsuarios("Bearer " + token)
                 .enqueue(new Callback<List<ActividadModel>>() {
                     @Override
                     public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
@@ -76,7 +76,7 @@ public class ListaViewModel extends ViewModel {
         List<Actividad> lista = new ArrayList<>();
         for (ActividadModel model : actividadesModel) {
             Actividad actividad = new Actividad();
-            actividad.setId(model.getId());
+            actividad.setId(Integer.parseInt(model.getId()));
             actividad.setTitulo(model.getTitle());
             actividad.setDescripcion(model.getDescription());
             actividad.setLugar(model.getPlace());
