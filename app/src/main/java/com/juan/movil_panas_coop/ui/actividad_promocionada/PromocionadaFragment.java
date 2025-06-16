@@ -37,14 +37,14 @@ public class PromocionadaFragment extends Fragment {
         recyclerView = root.findViewById(R.id.recyclerPromocionadas);
         tvEmpty = root.findViewById(R.id.tvEmptyPromocionadas);
 
-        // Configurar RecyclerView
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ActividadListaAdapter(new ArrayList<>());
-        recyclerView.setAdapter(adapter);
-
         // Inicializar ViewModel
         viewModel = new ViewModelProvider(this).get(PromocionadaViewModel.class);
         viewModel.init(requireContext().getApplicationContext());
+
+        // Configurar RecyclerView
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter = new ActividadListaAdapter(new ArrayList<>(), viewModel);
+        recyclerView.setAdapter(adapter);
 
         // Observar cambios en las actividades promocionadas
         viewModel.getActividadesPromocionadas().observe(getViewLifecycleOwner(), actividades -> {
