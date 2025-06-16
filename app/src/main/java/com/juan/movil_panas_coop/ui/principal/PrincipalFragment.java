@@ -56,6 +56,7 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     private int userId;
     private ExecutorService executorService;
     private SessionManager sessionManager;
+    private ApiService apiService;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -63,6 +64,10 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         PrincipalViewModel viewModel = new ViewModelProvider(this).get(PrincipalViewModel.class);
         executorService = Executors.newSingleThreadExecutor();
         sessionManager = new SessionManager(requireContext());
+        
+        // Inicializar RetrofitClient y obtener ApiService
+        RetrofitClient.init(requireContext());
+        apiService = RetrofitClient.getApiService();
     }
 
     @Override
@@ -151,138 +156,49 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     }
 
     public void cargarActividades() {
+        if (userId == -1) {
+            requireActivity().runOnUiThread(() -> {
+                Toast.makeText(getContext(), "Error: Usuario no autenticado", Toast.LENGTH_LONG).show();
+                tvEmptyActividades.setVisibility(View.VISIBLE);
+                tvEmptyActividades.setText("Por favor, inicia sesión nuevamente");
+            });
+            return;
+        }
+    
+        // Primero cargar datos locales
         executorService.execute(() -> {
             List<ActividadAdapter.Item> tempItemList = new ArrayList<>();
-
-            if (userId != -1) {
-                // Fetch all activities for the user
-                List<Actividad> allActividades = managerDb.obtenerActividadesPorUsuario(userId);
-                Log.d("PrincipalFragment", "Total actividades recuperadas para userId " + userId + ": " + allActividades.size());
-                for (Actividad actividad : allActividades) {
-                    Log.d("PrincipalFragment", "Actividad - ID: " + actividad.getId() +
-                            ", Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado() +
-                            ", Promocionada: " + actividad.isPromocionada() +
-                            ", Asistido: " + actividad.isAsistido() +
-                            ", ImagenRuta: " + actividad.getImagenRuta());
-                }
-
-                // Manually filter non-past activities
-                List<Actividad> noPasadas = new ArrayList<>();
-                Date currentDate = new Date();
-                Log.d("PrincipalFragment", "Fecha actual: " + currentDate);
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            actividad.setPasada(false); // Por defecto, no pasada si la fecha es inválida
-                            noPasadas.add(actividad);
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        Log.d("PrincipalFragment", "Comparando - Actividad Fecha: " + actividadDate + " con Current Fecha: " + currentDate);
-                        if (actividadDate.after(currentDate) || actividadDate.equals(currentDate)) {
-                            actividad.setPasada(false); // Actualizar el estado de pasada
-                            noPasadas.add(actividad);
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                        actividad.setPasada(false); // Por defecto, no pasada si hay error
-                        noPasadas.add(actividad);
+            List<Actividad> allActividades = managerDb.obtenerActividadesPorUsuario(userId);
+            
+            // Procesar actividades locales...
+            processLocalActivities(allActividades, tempItemList);
+    
+            // Luego sincronizar con el servidor
+            String token = "Bearer " + sessionManager.getToken();
+            apiService.getUserActivities(token).enqueue(new Callback<List<ActividadModel>>() {
+                @Override
+                public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        Log.d("PrincipalFragment", "Actividades recibidas del servidor: " + response.body().size());
+                        // Actualizar base de datos local con datos del servidor
+                        List<ActividadModel> serverActividades = response.body();
+                        actualizarBaseDatosLocal(serverActividades);
+                        // Recargar actividades desde la base de datos local
+                        cargarActividades();
+                    } else {
+                        Log.e("PrincipalFragment", "Error al obtener actividades: " + response.code());
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(getContext(), "Error al obtener actividades del servidor", Toast.LENGTH_SHORT).show();
+                        });
                     }
                 }
-                Log.d("PrincipalFragment", "Número de actividades no pasadas: " + noPasadas.size());
-                for (Actividad actividad : noPasadas) {
-                    Log.d("PrincipalFragment", "No pasada - Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado());
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_ACTIVIDAD, actividad, null, null));
-                }
-
-                // Sort non-past activities by date (descending)
-                Collections.sort(noPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
-
-                // Manually filter past activities
-                List<Actividad> actividadesPasadas = new ArrayList<>();
-                for (Actividad actividad : allActividades) {
-                    try {
-                        if (actividad.getFecha() == null || actividad.getFecha().isEmpty()) {
-                            Log.w("PrincipalFragment", "Fecha nula o vacía para actividad: " + actividad.getTitulo());
-                            continue;
-                        }
-                        Date actividadDate = sdf.parse(actividad.getFecha());
-                        if (actividadDate.before(currentDate)) {
-                            actividad.setPasada(true); // Actualizar el estado de pasada
-                            actividadesPasadas.add(actividad);
-                            Log.d("PrincipalFragment", "Actividad pasada agregada - Título: " + actividad.getTitulo() +
-                                    ", Fecha: " + actividad.getFecha());
-                        }
-                    } catch (ParseException e) {
-                        Log.e("PrincipalFragment", "Error parsing date for actividad " + actividad.getTitulo() + ": " + actividad.getFecha(), e);
-                    }
-                }
-                Log.d("PrincipalFragment", "Número de actividades pasadas: " + actividadesPasadas.size());
-                for (Actividad actividad : actividadesPasadas) {
-                    Log.d("PrincipalFragment", "Pasada - Título: " + actividad.getTitulo() +
-                            ", Fecha: " + actividad.getFecha() +
-                            ", idCreador: " + actividad.getIdCreador() +
-                            ", isPasada: " + actividad.isPasada() +
-                            ", Estado: " + actividad.getEstado());
-                }
-
-                // Sort past activities by date (descending)
-                Collections.sort(actividadesPasadas, new Comparator<Actividad>() {
-                    @Override
-                    public int compare(Actividad a1, Actividad a2) {
-                        try {
-                            Date fecha1 = sdf.parse(a1.getFecha());
-                            Date fecha2 = sdf.parse(a2.getFecha());
-                            return fecha2.compareTo(fecha1); // Most recent first
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            return 0;
-                        }
-                    }
-                });
-
-                // Add past activities section if there are any
-                if (!actividadesPasadas.isEmpty()) {
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_TITULO, null, getString(R.string.actividades_pasadas).toUpperCase(Locale.getDefault()), null));
-                    tempItemList.add(new ActividadAdapter.Item(ActividadAdapter.Item.TYPE_PASADAS, null, null, actividadesPasadas));
-                } else {
-                    Log.w("PrincipalFragment", "No se encontraron actividades pasadas para mostrar.");
-                }
-            } else {
-                Log.w("PrincipalFragment", "User ID is invalid: " + userId);
-            }
-
-            requireActivity().runOnUiThread(() -> {
-                itemList.clear();
-                itemList.addAll(tempItemList);
-                Log.d("PrincipalFragment", "Total de ítems cargados en el RecyclerView: " + itemList.size());
-                actividadAdapter.notifyDataSetChanged();
-                actualizarVisibilidad();
-                if (!itemList.isEmpty()) {
-                    recyclerActividades.scrollToPosition(0); // Scroll to top to see new activities
-                    adjustScrollBehavior(); // Ajustar el comportamiento de scroll según el número de ítems
+    
+                @Override
+                public void onFailure(Call<List<ActividadModel>> call, Throwable t) {
+                    Log.e("PrincipalFragment", "Error de conexión: " + t.getMessage());
+                    requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Error de conexión con el servidor", Toast.LENGTH_SHORT).show();
+                    });
                 }
             });
         });

@@ -202,7 +202,24 @@ public class CrearActividad extends AppCompatActivity {
             @Override
             public void onResponse(Call<ActividadModel> call, Response<ActividadModel> response) {
                 cleanupTempFile();
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Guardar en la base de datos local
+                    ActividadModel actividadCreada = response.body();
+                    Actividad actividad = new Actividad();
+                    actividad.setId(Integer.parseInt(actividadCreada.getId()));
+                    actividad.setTitulo(actividadCreada.getTitle());
+                    actividad.setDescripcion(actividadCreada.getDescription());
+                    actividad.setFecha(actividadCreada.getDate());
+                    actividad.setLugar(actividadCreada.getPlace());
+                    actividad.setIdCreador(String.valueOf(sessionManager.getUserId()));
+                    actividad.setResponsables(TextUtils.join(", ", actividadCreada.getResponsible()));
+                    actividad.setEstado("activa");
+                    
+                    ManagerDb managerDb = new ManagerDb(CrearActividad.this);
+                    managerDb.open();
+                    managerDb.insertarActividad(actividad);
+                    managerDb.close();
+                    
                     showToastAndLog("Actividad creada exitosamente");
                     finish();
                 } else {
