@@ -39,6 +39,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private OnConfigClickListener configListener;
     private ManagerDb managerDb;
     private int userId;
+    private PromocionadaViewModel promocionadaViewModel;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
     public interface OnActividadClickListener {
@@ -62,7 +63,8 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                          OnDetallesClickListener detallesListener,
                          OnAsistirClickListener asistirListener,
                          OnConfigClickListener configListener,
-                         int userId) {
+                         int userId,
+                         PromocionadaViewModel promocionadaViewModel) {
         this.actividadList = actividadList;
         this.clickListener = clickListener;
         this.detallesListener = detallesListener;
@@ -70,6 +72,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         this.configListener = configListener;
         this.managerDb = new ManagerDb(null);
         this.userId = userId;
+        this.promocionadaViewModel = promocionadaViewModel;
     }
 
     public void setManagerDb(ManagerDb managerDb) {
@@ -160,15 +163,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 detallesListener.onDetallesClick(actividad);
             });
             promoHolder.btnAsistirPromocionada.setOnClickListener(v -> asistirListener.onAsistirClick(actividad, position));
-            if (promoHolder.btnCompartirPromocionada != null) {
-                promoHolder.btnCompartirPromocionada.setOnClickListener(v -> {
-                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                    shareIntent.setType("text/plain");
-                    shareIntent.putExtra(Intent.EXTRA_SUBJECT, actividad.getTitle());
-                    shareIntent.putExtra(Intent.EXTRA_TEXT, "¡Mira esta actividad promocionada: " + actividad.getTitle() + "\n" + actividad.getDescription());
-                    holder.itemView.getContext().startActivity(Intent.createChooser(shareIntent, "Compartir actividad"));
-                });
-            }
+
             if (promoHolder.btnConfig != null) {
                 promoHolder.btnConfig.setOnClickListener(v -> configListener.onConfigClick(actividad));
             }
@@ -186,13 +181,12 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 actividadHolder.ivActividadImagen.setImageResource(R.drawable.default_image);
             }
             actividadHolder.itemView.setOnClickListener(v -> clickListener.onActividadClick(actividad));
-            if (actividadHolder.btnCompartir != null) {
-                actividadHolder.btnCompartir.setOnClickListener(v -> {
-                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                    shareIntent.setType("text/plain");
-                    shareIntent.putExtra(Intent.EXTRA_SUBJECT, actividad.getTitle());
-                    shareIntent.putExtra(Intent.EXTRA_TEXT, "¡Mira esta actividad: " + actividad.getTitle() + "\n" + actividad.getDescription());
-                    holder.itemView.getContext().startActivity(Intent.createChooser(shareIntent, "Compartir actividad"));
+            if (actividadHolder.switchPromocionar != null) {
+                actividadHolder.switchPromocionar.setChecked(actividad.isPromoted());
+                actividadHolder.switchPromocionar.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (promocionadaViewModel != null) {
+                        promocionadaViewModel.promocionarActividad(actividad.getId());
+                    }
                 });
             }
             actividadHolder.btnVerDetalles.setOnClickListener(v -> {
@@ -250,15 +244,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 });
                 dialog.show();
             });
-            if (asistirHolder.btnCompartir != null) {
-                asistirHolder.btnCompartir.setOnClickListener(v -> {
-                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                    shareIntent.setType("text/plain");
-                    shareIntent.putExtra(Intent.EXTRA_SUBJECT, actividad.getTitle());
-                    shareIntent.putExtra(Intent.EXTRA_TEXT, "¡Mira esta actividad a la que asistiré: " + actividad.getTitle() + "\n" + actividad.getDescription());
-                    holder.itemView.getContext().startActivity(Intent.createChooser(shareIntent, "Compartir actividad"));
-                });
-            }
+
             if (asistirHolder.btnConfig != null) {
                 asistirHolder.btnConfig.setOnClickListener(v -> configListener.onConfigClick(actividad));
             }
@@ -335,7 +321,6 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         ImageView ivActividadImagenPromocionada;
         Button btnVerDetallesPromocionada;
         Button btnAsistirPromocionada;
-        ImageButton btnCompartirPromocionada;
         ImageButton btnConfig;
 
         public PromocionadaViewHolder(@NonNull View itemView) {
@@ -352,19 +337,19 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     static class ActividadViewHolder extends RecyclerView.ViewHolder {
         TextView tvTituloActividad;
         ImageView ivActividadImagen;
-        ImageButton btnCompartir;
         Button btnVerDetalles;
         Button btnAsistirActividad;
         ImageButton btnConfig;
+        android.widget.Switch switchPromocionar;
 
         public ActividadViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTituloActividad = itemView.findViewById(R.id.tvTituloActividadLista);
             ivActividadImagen = itemView.findViewById(R.id.ivActividadImagenLista);
-            btnCompartir = itemView.findViewById(R.id.btnCompartir);
             btnVerDetalles = itemView.findViewById(R.id.btnVerDetalles);
             btnAsistirActividad = itemView.findViewById(R.id.btnAsistirActividad);
             btnConfig = itemView.findViewById(R.id.btnConfig);
+            switchPromocionar = itemView.findViewById(R.id.switchPromocionar);
         }
     }
 
@@ -373,7 +358,6 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         ImageView ivActividadImagen;
         Button btnVerDetalles;
         Button btnCancelarAsistencia;
-        ImageButton btnCompartir;
         ImageButton btnConfig;
 
         public AsistirViewHolder(@NonNull View itemView) {
