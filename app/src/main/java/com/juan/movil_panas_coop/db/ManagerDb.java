@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.models.Actividad;
 import com.juan.movil_panas_coop.models.Asistente;
 import com.juan.movil_panas_coop.models.Notificacion;
@@ -494,7 +495,7 @@ public class ManagerDb {
 //        return actividades;
 //    }
 
-    public List<Actividad> buscarActividades(String busqueda, String fechaFiltro, String lugar, String estadoFiltro) {
+    public List<ActividadModel> buscarActividades(String busqueda, String fechaFiltro, String lugar, String estadoFiltro) {
         List<Actividad> actividadesFiltradas = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         Date today;

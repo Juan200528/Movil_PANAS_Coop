@@ -15,22 +15,27 @@ import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.model.Actividad;
-import com.juan.movil_panas_coop.model.Asistente;
-import com.juan.movil_panas_coop.model.BuscarAdapter;
+import com.juan.movil_panas_coop.model.ActividadModel;
+import com.juan.movil_panas_coop.models.Asistente;
+import com.juan.movil_panas_coop.models.BuscarAdapter;
 import com.juan.movil_panas_coop.ui.recordatorio.RecordatorioFragment;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class BuscarFragment extends Fragment implements BuscarAdapter.OnActividadClickListener,
-        BuscarAdapter.OnDetallesClickListener, BuscarAdapter.OnAsistirClickListener,
+public class BuscarFragment extends Fragment implements
+        BuscarAdapter.OnActividadClickListener,
+        BuscarAdapter.OnDetallesClickListener,
+        BuscarAdapter.OnAsistirClickListener,
         BuscarAdapter.OnConfigClickListener {
 
     private EditText etBuscar;
@@ -40,7 +45,7 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
     private Button btnBuscar;
     private RecyclerView recyclerViewActividades;
     private BuscarAdapter buscarAdapter;
-    private List<Actividad> actividadList;
+    private List<ActividadModel> actividadList;
     private BuscarViewModel viewModel;
     private ManagerDb managerDb;
     private int userId;
@@ -49,6 +54,7 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_buscar, container, false);
 
+        // Inicialización de vistas
         etBuscar = view.findViewById(R.id.etBuscar);
         rgFechaSeleccionada = view.findViewById(R.id.rgFechaSeleccionada);
         rgEstadoSeleccionado = view.findViewById(R.id.rgEstadoSeleccionado);
@@ -64,18 +70,20 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
         managerDb = new ManagerDb(getContext());
         SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE);
         userId = prefs.getInt("user_id", -1);
+
         if (userId == -1) {
             Toast.makeText(getContext(), "Error: Usuario no identificado", Toast.LENGTH_SHORT).show();
             return view;
         }
 
+        // Inicializar lista y adaptador
         actividadList = new ArrayList<>();
         buscarAdapter = new BuscarAdapter(actividadList, this, this, this, this, userId);
         buscarAdapter.setManagerDb(managerDb);
+
+        // Configurar RecyclerView
         recyclerViewActividades.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewActividades.setAdapter(buscarAdapter);
-
-        // Habilitar desplazamiento y ajuste dinámico
         recyclerViewActividades.setNestedScrollingEnabled(true);
         recyclerViewActividades.setHasFixedSize(false);
         recyclerViewActividades.setClipToPadding(false);
@@ -85,48 +93,36 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
         viewModel = new ViewModelProvider(this).get(BuscarViewModel.class);
         viewModel.init(getContext(), userId);
 
-        // Configurar RadioGroup para rgFechaSeleccionada
-        rgFechaSeleccionada.setOnCheckedChangeListener((group, checkedId) -> {
-            String fechaFiltro = "";
-            if (rbFechaTodas.isChecked()) {
-                fechaFiltro = "Todas";
-            } else if (rbFechaProximas.isChecked()) {
-                fechaFiltro = "Próximas";
-            } else if (rbFechaPasadas.isChecked()) {
-                fechaFiltro = "Pasadas";
-            }
-            viewModel.setFechaFiltro(fechaFiltro);
-            viewModel.buscarActividades(etBuscar.getText().toString().trim(), ""); // Refrescar al cambiar filtro
-            Log.d("BuscarFragment", "Fecha seleccionada: " + fechaFiltro);
-        });
-        rbFechaTodas.setChecked(true);
-
-        // Configurar RadioGroup para rgEstadoSeleccionado
-        rgEstadoSeleccionado.setOnCheckedChangeListener((group, checkedId) -> {
-            String estadoFiltro = "";
-            if (rbEstadoTodas.isChecked()) {
-                estadoFiltro = "Todas";
-            } else if (rbEstadoPromocionadas.isChecked()) {
-                estadoFiltro = "Promocionadas";
-            }
-            viewModel.setEstadoFiltro(estadoFiltro);
-            viewModel.buscarActividades(etBuscar.getText().toString().trim(), ""); // Refrescar al cambiar filtro
-            Log.d("BuscarFragment", "Estado seleccionado: " + estadoFiltro);
-        });
-        rbEstadoTodas.setChecked(true);
-
-        // Configurar el botón de búsqueda
+        // Configurar botón de búsqueda
         btnBuscar.setOnClickListener(v -> {
             String query = etBuscar.getText().toString().trim();
-            viewModel.buscarActividades(query, "");
-            Log.d("BuscarFragment", "Búsqueda iniciada con query: " + query);
+            String filtroFecha = obtenerFiltroFecha();
+            String filtroEstado = obtenerFiltroEstado();
+            viewModel.buscarActividades(query, filtroFecha, filtroEstado);
         });
 
-        // Observar los datos del ViewModel
+        // Observar cambios en LiveData
         viewModel.getActividades().observe(getViewLifecycleOwner(), actividades -> {
             actividadList.clear();
             if (actividades != null) {
                 actividadList.addAll(actividades);
+                buscarAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    private String obtenerFiltroFecha() {
+        if (rbFechaTodas.isChecked()) return "todas";
+        if (rbFechaProximas.isChecked()) return "proximas";
+        if (rbFechaPasadas.isChecked()) return "pasadas";
+        return "todas";
+    }
+
+    private String obtenerFiltroEstado() {
+        if (rbEstadoTodas.isChecked()) return "todas";
+        if (rbEstadoPromocionadas.isChecked()) return "promocionadas";
+        return "todas";
+    
             }
             buscarAdapter.notifyDataSetChanged();
             ajustarAlturaRecyclerView();
@@ -138,20 +134,15 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
 
     private void ajustarAlturaRecyclerView() {
         if (recyclerViewActividades != null && recyclerViewActividades.getAdapter() != null) {
-            // Usar WRAP_CONTENT como altura predeterminada
             ViewGroup.LayoutParams params = recyclerViewActividades.getLayoutParams();
             params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
             recyclerViewActividades.setLayoutParams(params);
 
-            // Calcular altura basada en el diseño más alto (600dp para pasadas)
             float dpToPx = getResources().getDisplayMetrics().density;
-            int maxItemHeight = (int) (600 * dpToPx); // Altura de la imagen en item_actividad_usuario.xml
-            int marginPadding = (int) (106 * dpToPx); // Márgenes y padding estimados (8dp + 18dp)
-
-            // Estimar altura total considerando el diseño más alto
+            int maxItemHeight = (int) (600 * dpToPx); // Altura de item pasadas
+            int marginPadding = (int) (106 * dpToPx); // Márgenes estimados
             int totalHeight = actividadList.size() * (maxItemHeight + marginPadding);
 
-            // Obtener altura usable de la pantalla
             DisplayMetrics displayMetrics = new DisplayMetrics();
             requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenHeight = displayMetrics.heightPixels;
@@ -159,49 +150,48 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
             int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height);
             int usableHeight = screenHeight - navigationBarHeight - bottomNavHeight;
 
-            // Asegurar desplazamiento si excede la altura usable
             recyclerViewActividades.setNestedScrollingEnabled(totalHeight > usableHeight);
         }
     }
 
     private int getNavigationBarHeight() {
         int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            return getResources().getDimensionPixelSize(resourceId);
-        }
-        return 0;
+        return resourceId > 0 ? getResources().getDimensionPixelSize(resourceId) : 0;
     }
 
     @Override
-    public void onActividadClick(Actividad actividad) {
-        Log.d("BuscarFragment", "Clic en actividad: " + actividad.getTitulo());
+    public void onActividadClick(ActividadModel actividad) {
+        Log.d("BuscarFragment", "Clic en actividad: " + actividad.getTitle());
     }
 
     @Override
-    public void onDetallesClick(Actividad actividad) {
-        Log.d("BuscarFragment", "Ver detalles de actividad: " + actividad.getTitulo());
+    public void onDetallesClick(ActividadModel actividad) {
+        Log.d("BuscarFragment", "Ver detalles de actividad: " + actividad.getTitle());
     }
 
     @Override
-    public void onAsistirClick(Actividad actividad, int position) {
+    public void onAsistirClick(ActividadModel actividad, int position) {
         mostrarDialogoAsistir(actividad, position);
     }
 
     @Override
-    public void onConfigClick(Actividad actividad) {
+    public void onConfigClick(ActividadModel actividad) {
         Bundle bundle = new Bundle();
-        bundle.putInt("activity_id", actividad.getId());
+        bundle.putString("activity_id", actividad.getId());
+
         RecordatorioFragment recordatorioFragment = new RecordatorioFragment();
         recordatorioFragment.setArguments(bundle);
+
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_container, recordatorioFragment) // Cambiado a fragment_container
+                .replace(R.id.fragment_container, recordatorioFragment)
                 .addToBackStack(null)
                 .commit();
-        Log.d("BuscarFragment", "Navegando a RecordatorioFragment para actividad: " + actividad.getTitulo());
+
+        Log.d("BuscarFragment", "Navegando a RecordatorioFragment para: " + actividad.getTitle());
     }
 
-    private void mostrarDialogoAsistir(Actividad actividad, int position) {
+    private void mostrarDialogoAsistir(ActividadModel actividad, int position) {
         Dialog dialog = new Dialog(requireContext());
         dialog.setContentView(R.layout.dialogo_asistir);
         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -226,17 +216,18 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
 
             if (!nombreCompleto.isEmpty() && !email.isEmpty()) {
                 if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    Toast.makeText(getContext(), "Por favor, ingresa un correo válido", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Correo inválido", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 managerDb.open();
                 Asistente asistente = new Asistente();
                 asistente.setIdAsistente(userId);
-                asistente.setIdActividad(actividad.getId());
+                asistente.setIdActividad(Integer.parseInt(actividad.getId()));
                 asistente.setNombreCompleto(nombreCompleto);
                 asistente.setCorreo(email);
-                asistente.setActividadNombre(actividad.getTitulo());
+                asistente.setActividadNombre(actividad.getTitle());
+
                 long result = managerDb.insertarAsistente(asistente);
                 if (result != -1) {
                     actividad.setAsistido(true);
@@ -245,10 +236,11 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
                 } else {
                     Toast.makeText(getContext(), "Error al registrar asistencia", Toast.LENGTH_SHORT).show();
                 }
+
                 managerDb.close();
                 dialog.dismiss();
             } else {
-                Toast.makeText(getContext(), "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show();
             }
         });
 

@@ -20,8 +20,9 @@ import retrofit2.Response;
 import android.content.Context;
 
 public class ListaViewModel extends ViewModel {
-
     private final MutableLiveData<List<Actividad>> actividades = new MutableLiveData<>();
+    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
 
     public void init(Context context, int userId) {
         cargarActividadesDesdeApi(context);
@@ -31,49 +32,63 @@ public class ListaViewModel extends ViewModel {
         return actividades;
     }
 
+    public LiveData<String> getError() {
+        return error;
+    }
+
+    public LiveData<Boolean> getIsLoading() {
+        return isLoading;
+    }
+
     private void cargarActividadesDesdeApi(Context context) {
         SessionManager sessionManager = new SessionManager(context);
         String token = sessionManager.fetchAuthToken();
 
         if (token == null) {
-            Log.e("ListaViewModel", "Token no encontrado en SessionManager");
-            actividades.setValue(new ArrayList<>());
+            error.setValue("Token no encontrado. Por favor, inicia sesión nuevamente.");
             return;
         }
 
-        RetrofitClient.getApiService().obtenerActividadesOtrosUsuarios("Bearer " + token)
+        isLoading.setValue(true);
+        RetrofitClient.getApiService().getOthersTasks("Bearer " + token)
                 .enqueue(new Callback<List<ActividadModel>>() {
                     @Override
                     public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
+                        isLoading.setValue(false);
                         if (response.isSuccessful() && response.body() != null) {
-                            List<Actividad> lista = new ArrayList<>();
-                            for (ActividadModel model : response.body()) {
-                                Actividad actividad = new Actividad();
-                                actividad.setId(-1); // o puedes usar model.getId().hashCode() si deseas usarlo como identificador temporal
-                                actividad.setTitulo(model.getTitle());
-                                actividad.setDescripcion(model.getDescription());
-                                actividad.setLugar(model.getPlace());
-                                actividad.setFecha(model.getDate());
-                                actividad.setResponsables(String.join(", ", model.getResponsible())); // lo convierte en String
-                                actividad.setEstado("Activo"); // o lo que aplique por defecto
-                                actividad.setPromocionada(false);
-                                actividad.setPasada(false);
-                                actividad.setAsistido(false);
-                                actividad.setImagenRuta(null); // o asigna imagen por defecto si hay
-                                lista.add(actividad);
-                            }
+                            List<Actividad> lista = convertirActividadesModelAActividades(response.body());
                             actividades.setValue(lista);
                         } else {
-                            Log.e("ListaViewModel", "Error al obtener actividades: " + response.code());
-                            actividades.setValue(new ArrayList<>());
+                            error.setValue("Error al obtener actividades: " + 
+                                (response.errorBody() != null ? response.errorBody().toString() : "Código " + response.code()));
                         }
                     }
 
                     @Override
                     public void onFailure(Call<List<ActividadModel>> call, Throwable t) {
-                        Log.e("ListaViewModel", "Fallo de red al obtener actividades", t);
-                        actividades.setValue(new ArrayList<>());
+                        isLoading.setValue(false);
+                        error.setValue("Error de conexión: " + t.getMessage());
                     }
                 });
+    }
+
+    private List<Actividad> convertirActividadesModelAActividades(List<ActividadModel> actividadesModel) {
+        List<Actividad> lista = new ArrayList<>();
+        for (ActividadModel model : actividadesModel) {
+            Actividad actividad = new Actividad();
+            actividad.setId(model.getId());
+            actividad.setTitulo(model.getTitle());
+            actividad.setDescripcion(model.getDescription());
+            actividad.setLugar(model.getPlace());
+            actividad.setFecha(model.getDate());
+            actividad.setResponsables(String.join(", ", model.getResponsible()));
+            actividad.setEstado(model.getStatus());
+            actividad.setPromocionada(model.isPromoted());
+            actividad.setPasada(false); // Esto se puede calcular comparando la fecha
+            actividad.setAsistido(false); // Esto se puede verificar con el backend
+            actividad.setImagenRuta(model.getImageUrl());
+            lista.add(actividad);
+        }
+        return lista;
     }
 }
