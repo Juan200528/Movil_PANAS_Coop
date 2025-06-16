@@ -27,6 +27,8 @@ import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.models.Actividad;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
 import com.juan.movil_panas_coop.db.ManagerDb;
+import com.juan.movil_panas_coop.utils.SessionManager;
+
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -66,38 +68,50 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_principal, container, false);
+        
+        // Inicialización básica de vistas
+        initializeViews(root);
+        
+        // Mover la inicialización pesada a un hilo separado
+        executorService.execute(() -> {
+            initializeDatabase();
+            initializeUserId();
+            requireActivity().runOnUiThread(() -> {
+                setupRecyclerView();
+                cargarActividades();
+            });
+        });
 
+        return root;
+    }
+
+    private void initializeViews(View root) {
         recyclerActividades = root.findViewById(R.id.recyclerActividades);
         tvMisActividades = root.findViewById(R.id.tvMisActividades);
         tvEmptyActividades = root.findViewById(R.id.tvEmptyActividades);
+    }
 
+    private void initializeDatabase() {
         managerDb = new ManagerDb(getContext());
         managerDb.open();
+    }
 
-        userId = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE)
-                .getInt("user_id", -1);
-        Log.d("PrincipalFragment", "User ID in PrincipalFragment: " + userId);
-        String userIdStr = sessionManager.getUserId();
-        userId = userIdStr != null ? Integer.parseInt(userIdStr) : -1;
-        
-        if (userId == -1) {
-            Log.e("PrincipalFragment", "ERROR: user_id is -1 in SessionManager. Check login flow.");
-            Toast.makeText(getContext(), "Error: No se encontró el ID de usuario. Por favor, inicie sesión nuevamente.", Toast.LENGTH_LONG).show();
-            // Opcional: Redirigir al usuario a la pantalla de inicio de sesión
-            // Navigation.findNavController(root).navigate(R.id.action_to_login);
-            return root;
+    private void initializeUserId() {
+        if (getContext() != null) {
+            userId = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE)
+                    .getInt("user_id", -1);
+            Log.d("PrincipalFragment", "User ID in PrincipalFragment: " + userId);
         }
+    }
 
-        // Configurar el LinearLayoutManager
+    private void setupRecyclerView() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerActividades.setLayoutManager(layoutManager);
-        recyclerActividades.setHasFixedSize(true); // Optimizar con tamaño fijo
+        recyclerActividades.setHasFixedSize(true);
 
-        // Agregar SnapHelper para alinear las tarjetas completamente
         SnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(recyclerActividades);
 
-        // Ajustar el margen inferior para evitar superposición con la barra de navegación
         adjustRecyclerViewMargin();
 
         itemList = new ArrayList<>();
@@ -105,10 +119,6 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
                 this::mostrarDialogoEditar, this::mostrarDialogoDetalles);
         actividadAdapter.setManagerDb(managerDb);
         recyclerActividades.setAdapter(actividadAdapter);
-
-        cargarActividades();
-
-        return root;
     }
 
     private void adjustRecyclerViewMargin() {
