@@ -23,7 +23,7 @@ public class PromocionadaViewModel extends ViewModel {
     public void init(android.content.Context context) {
         actividadesPromocionadas = new MutableLiveData<>();
         sessionManager = new SessionManager(context);
-        apiService = new ApiService();
+        apiService = RetrofitClient.getApiService();
         cargarActividadesPromocionadas();
     }
 
