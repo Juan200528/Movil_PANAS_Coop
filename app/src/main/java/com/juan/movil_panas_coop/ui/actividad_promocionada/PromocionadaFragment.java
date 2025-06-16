@@ -43,7 +43,7 @@ public class PromocionadaFragment extends Fragment {
 
         // Configurar RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ActividadListaAdapter(new ArrayList<>(), viewModel);
+        adapter = new ActividadListaAdapter(new ArrayList<ActividadModel>(), viewModel);
         recyclerView.setAdapter(adapter);
 
         // Observar cambios en las actividades promocionadas
