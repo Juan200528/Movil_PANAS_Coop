@@ -17,6 +17,7 @@ import com.juan.movil_panas_coop.api.ApiService;
 import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
+import com.juan.movil_panas_coop.models.ActividadListaAdapter;
 import com.juan.movil_panas_coop.utils.SessionManager;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class ListaActividadesFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private TextView tvEmpty;
-    private ActividadAdapter adapter;
+    private ActividadListaAdapter adapter;
     private SessionManager sessionManager;
     private ApiService apiService;
 
