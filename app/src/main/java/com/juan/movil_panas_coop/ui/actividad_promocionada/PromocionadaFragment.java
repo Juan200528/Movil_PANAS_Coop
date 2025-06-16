@@ -44,7 +44,7 @@ public class PromocionadaFragment extends Fragment {
 
         // Inicializar ViewModel
         viewModel = new ViewModelProvider(this).get(PromocionadaViewModel.class);
-        viewModel.init(requireContext());
+        viewModel.init(requireContext().getApplicationContext());
 
         // Observar cambios en las actividades promocionadas
         viewModel.getActividadesPromocionadas().observe(getViewLifecycleOwner(), actividades -> {
