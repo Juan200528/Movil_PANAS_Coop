@@ -27,11 +27,12 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class ListaActividadesFragment extends Fragment {
+public class ListaActividadesFragment extends Fragment implements OnActividadClickListener,
+        OnEliminarClickListener, OnEditarClickListener, OnDetallesClickListener {
 
     private RecyclerView recyclerView;
     private TextView tvEmpty;
-    private ActividadAdapter adapter; // Cambiar a ActividadAdapter en lugar de ActividadListaAdapter
+    private ActividadAdapter adapter;
     private SessionManager sessionManager;
     private ApiService apiService;
 
@@ -45,7 +46,7 @@ public class ListaActividadesFragment extends Fragment {
 
         // Configurar RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ActividadAdapter(new ArrayList<ActividadModel>()); // Usar ActividadAdapter con tipo específico
+        adapter = new ActividadAdapter(new ArrayList<ActividadModel>(), this, this, this, this);
         recyclerView.setAdapter(adapter);
 
         // Inicializar servicios
@@ -84,5 +85,25 @@ public class ListaActividadesFragment extends Fragment {
                 Toast.makeText(getContext(), "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    public void onActividadClick(ActividadModel actividad) {
+        // Implementar el manejo del clic en la actividad
+    }
+
+    @Override
+    public void onEliminarClick(ActividadModel actividad) {
+        // Implementar la eliminación de la actividad
+    }
+
+    @Override
+    public void onEditarClick(ActividadModel actividad) {
+        // Implementar la edición de la actividad
+    }
+
+    @Override
+    public void onDetallesClick(ActividadModel actividad) {
+        // Implementar la visualización de detalles
     }
 }
