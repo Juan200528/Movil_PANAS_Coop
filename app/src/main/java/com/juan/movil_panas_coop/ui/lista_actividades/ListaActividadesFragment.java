@@ -28,6 +28,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import com.juan.movil_panas_coop.models.ActividadAdapter.OnEliminarClickListener;
+import com.juan.movil_panas_coop.models.ActividadAdapter.OnEditarClickListener;
+import com.juan.movil_panas_coop.models.ActividadAdapter.OnDetallesClickListener;
+
 public class ListaActividadesFragment extends Fragment implements OnActividadClickListener,
         OnEliminarClickListener, OnEditarClickListener, OnDetallesClickListener {
 
