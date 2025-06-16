@@ -27,6 +27,7 @@ import com.juan.movil_panas_coop.db.ManagerDb;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.models.Asistente;
 import com.juan.movil_panas_coop.models.BuscarAdapter;
+import com.juan.movil_panas_coop.models.PromocionadaViewModel;
 import com.juan.movil_panas_coop.ui.recordatorio.RecordatorioFragment;
 
 import java.util.ArrayList;
@@ -94,7 +95,7 @@ public class BuscarFragment extends Fragment implements
         viewModel = new ViewModelProvider(this).get(BuscarViewModel.class);
         promocionadaViewModel = new ViewModelProvider(this).get(PromocionadaViewModel.class);
         viewModel.init(getContext(), userId);
-        promocionadaViewModel.init();
+        promocionadaViewModel.init(viewModel.getSessionManager(), viewModel.getApiService());
 
         // Observar cambios en LiveData
         viewModel.getActividades().observe(getViewLifecycleOwner(), actividades -> {
