@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.juan.movil_panas_coop.api.ApiService;
+import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.utils.SessionManager;
 
