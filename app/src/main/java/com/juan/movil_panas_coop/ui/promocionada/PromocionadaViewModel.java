@@ -24,6 +24,7 @@ public class PromocionadaViewModel extends ViewModel {
     public void init(android.content.Context context) {
         actividadesPromocionadas = new MutableLiveData<>();
         sessionManager = new SessionManager(context);
+        RetrofitClient.init(context);
         apiService = RetrofitClient.getApiService();
         cargarActividadesPromocionadas();
     }
@@ -33,8 +34,8 @@ public class PromocionadaViewModel extends ViewModel {
     }
 
     private void cargarActividadesPromocionadas() {
-        String token = "Bearer " + sessionManager.getAuthToken();
-        apiService.getPromotedTasks(token).enqueue(new Callback<List<ActividadModel>>() {
+        String token = "Bearer " + sessionManager.getToken();
+        apiService.getPromotedTasks().enqueue(new Callback<List<ActividadModel>>() {
             @Override
             public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
                 if (response.isSuccessful() && response.body() != null) {
