@@ -18,6 +18,7 @@ import com.juan.movil_panas_coop.api.RetrofitClient;
 import com.juan.movil_panas_coop.model.ActividadModel;
 import com.juan.movil_panas_coop.models.ActividadAdapter;
 import com.juan.movil_panas_coop.models.ActividadListaAdapter;
+import com.juan.movil_panas_coop.models.ActividadAdapter.OnActividadClickListener;
 import com.juan.movil_panas_coop.utils.SessionManager;
 
 import java.util.ArrayList;
