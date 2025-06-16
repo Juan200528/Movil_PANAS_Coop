@@ -412,6 +412,21 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         dialog.show();
     }
 
+    private void handleFailure(Throwable t) {
+        if (isAdded() && getActivity() != null) {
+            requireActivity().runOnUiThread(() -> {
+                // Your error handling code here
+                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
+    // In your onFailure callback
+    @Override
+    public void onFailure(Call<YourResponseType> call, Throwable t) {
+        handleFailure(t);
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
