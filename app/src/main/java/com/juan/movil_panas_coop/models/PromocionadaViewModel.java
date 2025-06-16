@@ -47,7 +47,7 @@ public class PromocionadaViewModel extends ViewModel {
         isLoading.setValue(true);
         String token = sessionManager.getToken();
 
-        apiService.getPromotedTasks("Bearer " + token).enqueue(new Callback<List<ActividadModel>>() {
+        apiService.getPromotedTasks().enqueue(new Callback<List<ActividadModel>>() {
             @Override
             public void onResponse(Call<List<ActividadModel>> call, Response<List<ActividadModel>> response) {
                 isLoading.setValue(false);
