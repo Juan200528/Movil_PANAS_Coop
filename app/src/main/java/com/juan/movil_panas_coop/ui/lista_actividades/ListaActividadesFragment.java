@@ -31,7 +31,7 @@ public class ListaActividadesFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private TextView tvEmpty;
-    private ActividadListaAdapter adapter;
+    private ActividadAdapter adapter; // Cambiar a ActividadAdapter en lugar de ActividadListaAdapter
     private SessionManager sessionManager;
     private ApiService apiService;
 
@@ -45,7 +45,7 @@ public class ListaActividadesFragment extends Fragment {
 
         // Configurar RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ActividadListaAdapter(new ArrayList<>());
+        adapter = new ActividadAdapter(new ArrayList<ActividadModel>()); // Usar ActividadAdapter con tipo específico
         recyclerView.setAdapter(adapter);
 
         // Inicializar servicios
