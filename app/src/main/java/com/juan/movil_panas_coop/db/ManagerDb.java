@@ -13,6 +13,7 @@ import com.juan.movil_panas_coop.models.Notificacion;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -496,7 +497,7 @@ public class ManagerDb {
 //    }
 
     public List<ActividadModel> buscarActividades(String busqueda, String fechaFiltro, String lugar, String estadoFiltro) {
-        List<Actividad> actividadesFiltradas = new ArrayList<>();
+        List<ActividadModel> actividadesFiltradas = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         Date today;
         try {
@@ -550,7 +551,23 @@ public class ManagerDb {
                 }
 
                 if (matchesQuery && matchesLugar && matchesFecha && matchesEstado) {
-                    actividadesFiltradas.add(actividad);
+                    ActividadModel actividadModel = new ActividadModel();
+                    actividadModel.setId(String.valueOf(actividad.getId()));
+                    actividadModel.setTitle(actividad.getTitulo());
+                    actividadModel.setDescription(actividad.getDescripcion());
+                    actividadModel.setPlace(actividad.getLugar());
+                    actividadModel.setDate(actividad.getFecha());
+                    
+                    // Convertir responsables de String a List<String>
+                    List<String> responsablesList = new ArrayList<>();
+                    if (actividad.getResponsables() != null && !actividad.getResponsables().isEmpty()) {
+                        responsablesList = Arrays.asList(actividad.getResponsables().split(","));
+                    }
+                    actividadModel.setResponsible(responsablesList);
+                    
+                    actividadModel.setPromoted(actividad.isPromocionada());
+                    actividadModel.setAsistido(actividad.isAsistido());
+                    actividadesFiltradas.add(actividadModel);
                 }
             } catch (ParseException e) {
                 e.printStackTrace();
