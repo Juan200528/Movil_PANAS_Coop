@@ -53,12 +53,14 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     private List<ActividadAdapter.Item> itemList;
     private int userId;
     private ExecutorService executorService;
+    private SessionManager sessionManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         PrincipalViewModel viewModel = new ViewModelProvider(this).get(PrincipalViewModel.class);
         executorService = Executors.newSingleThreadExecutor();
+        sessionManager = new SessionManager(requireContext());
     }
 
     @Override
@@ -75,9 +77,15 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
         userId = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE)
                 .getInt("user_id", -1);
         Log.d("PrincipalFragment", "User ID in PrincipalFragment: " + userId);
+        String userIdStr = sessionManager.getUserId();
+        userId = userIdStr != null ? Integer.parseInt(userIdStr) : -1;
+        
         if (userId == -1) {
-            Log.e("PrincipalFragment", "ERROR: user_id is -1 in SharedPreferences. Check login flow.");
-            Toast.makeText(getContext(), "Error: No se encontró el ID de usuario. Verifique el inicio de sesión.", Toast.LENGTH_LONG).show();
+            Log.e("PrincipalFragment", "ERROR: user_id is -1 in SessionManager. Check login flow.");
+            Toast.makeText(getContext(), "Error: No se encontró el ID de usuario. Por favor, inicie sesión nuevamente.", Toast.LENGTH_LONG).show();
+            // Opcional: Redirigir al usuario a la pantalla de inicio de sesión
+            // Navigation.findNavController(root).navigate(R.id.action_to_login);
+            return root;
         }
 
         // Configurar el LinearLayoutManager
@@ -436,7 +444,17 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
     public void onFailure(Call<List<Actividad>> call, Throwable t) {
         if (isAdded() && getActivity() != null) {
             requireActivity().runOnUiThread(() -> {
-                Toast.makeText(getContext(), "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                String errorMessage = "Error al cargar las actividades";
+                if (t.getMessage() != null) {
+                    if (t.getMessage().contains("usuario no autenticado")) {
+                        errorMessage = "Sesión expirada. Por favor, inicie sesión nuevamente.";
+                        // Opcional: Redirigir al usuario a la pantalla de inicio de sesión
+                        // Navigation.findNavController(requireView()).navigate(R.id.action_to_login);
+                    } else {
+                        errorMessage += ": " + t.getMessage();
+                    }
+                }
+                Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
             });
         }
     }
