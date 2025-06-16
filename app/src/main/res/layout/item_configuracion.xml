@@ -6,7 +6,6 @@
     android:orientation="vertical"
     android:layout_marginTop="2dp">
 
-    <!-- Tarjetas de actividad -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/main"
         android:layout_width="match_parent"
@@ -46,5 +45,4 @@
                 android:textColor="#666666" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-
 </LinearLayout>

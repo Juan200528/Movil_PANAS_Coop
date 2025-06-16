@@ -28,7 +28,9 @@
         app:itemIconTint="@drawable/nav_item_color"
         app:itemTextColor="@drawable/nav_item_color"
         app:labelVisibilityMode="labeled"
-        app:elevation="4dp"/>
+        app:elevation="4dp">
+
+    </com.google.android.material.bottomnavigation.BottomNavigationView>
 
     <!-- Botón flotante para crear actividad -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -36,13 +38,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
-        android:layout_margin="12dp"
-        android:layout_marginBottom="84dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="120dp"
         android:src="@android:drawable/ic_input_add"
+        android:visibility="visible"
         app:backgroundTint="#03683E"
-        app:tint="@android:color/white"
-        app:elevation="12dp"
+        app:elevation="60dp"
         app:pressedTranslationZ="12dp"
-        android:visibility="visible" />
+        app:tint="@android:color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

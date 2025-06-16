@@ -82,7 +82,7 @@ public class ActividadAdapterLista extends RecyclerView.Adapter<RecyclerView.Vie
             View view = inflater.inflate(R.layout.item_actividad_lista, parent, false);
             return new ActividadViewHolder(view);
         } else {
-            View view = inflater.inflate(R.layout.item_asistir, parent, false);
+            View view = inflater.inflate(R.layout.item_actividad_usuario, parent, false);
             return new AsistirViewHolder(view);
         }
     }
