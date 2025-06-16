@@ -361,6 +361,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         Button btnVerDetalles;
         Button btnCancelarAsistencia;
         ImageButton btnConfig;
+        Button btnCompartir;  // Agregamos la declaración del botón
 
         public AsistirViewHolder(@NonNull View itemView) {
             super(itemView);
