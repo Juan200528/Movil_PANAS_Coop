@@ -30,7 +30,6 @@
             android:layout_height="wrap_content"
             android:text="Selecciona a tu necesidad"
             android:textSize="14sp"
-            android:textColor="#666666"
             android:layout_marginBottom="32dp" />
 
         <!-- Cuadros en GridLayout -->

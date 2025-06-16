@@ -35,9 +35,10 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private OnActividadClickListener clickListener;
     private OnDetallesClickListener detallesListener;
     private OnAsistirClickListener asistirListener;
+    private OnConfigClickListener configListener;
     private ManagerDb managerDb;
     private int userId;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
     public interface OnActividadClickListener {
         void onActividadClick(Actividad actividad);
@@ -51,12 +52,18 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         void onAsistirClick(Actividad actividad, int position);
     }
 
+    public interface OnConfigClickListener {
+        void onConfigClick(Actividad actividad);
+    }
+
     public BuscarAdapter(List<Actividad> actividadList, OnActividadClickListener clickListener,
-                         OnDetallesClickListener detallesListener, OnAsistirClickListener asistirListener, int userId) {
+                         OnDetallesClickListener detallesListener, OnAsistirClickListener asistirListener,
+                         OnConfigClickListener configListener, int userId) {
         this.actividadList = actividadList;
         this.clickListener = clickListener;
         this.detallesListener = detallesListener;
         this.asistirListener = asistirListener;
+        this.configListener = configListener;
         this.managerDb = new ManagerDb(null);
         this.userId = userId;
     }
@@ -162,6 +169,10 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     holder.itemView.getContext().startActivity(Intent.createChooser(shareIntent, "Compartir actividad"));
                 });
             }
+
+            if (promoHolder.btnConfig != null) {
+                promoHolder.btnConfig.setOnClickListener(v -> configListener.onConfigClick(actividad));
+            }
         } else if (holder instanceof ActividadViewHolder) {
             ActividadViewHolder actividadHolder = (ActividadViewHolder) holder;
             actividadHolder.tvTituloActividad.setText(actividad.getTitulo() != null ? actividad.getTitulo() : "");
@@ -195,6 +206,10 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             });
 
             actividadHolder.btnAsistirActividad.setOnClickListener(v -> asistirListener.onAsistirClick(actividad, position));
+
+            if (actividadHolder.btnConfig != null) {
+                actividadHolder.btnConfig.setOnClickListener(v -> configListener.onConfigClick(actividad));
+            }
         } else if (holder instanceof AsistirViewHolder) {
             AsistirViewHolder asistirHolder = (AsistirViewHolder) holder;
             asistirHolder.tvTituloActividad.setText(actividad.getTitulo() != null ? actividad.getTitulo() : "");
@@ -260,6 +275,9 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 });
             }
 
+            if (asistirHolder.btnConfig != null) {
+                asistirHolder.btnConfig.setOnClickListener(v -> configListener.onConfigClick(actividad));
+            }
             asistirHolder.itemView.setOnClickListener(v -> clickListener.onActividadClick(actividad));
         } else if (holder instanceof PasadaViewHolder) {
             PasadaViewHolder pasadaHolder = (PasadaViewHolder) holder;
@@ -281,6 +299,9 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 detallesListener.onDetallesClick(actividad);
             });
 
+            if (pasadaHolder.btnConfig != null) {
+                pasadaHolder.btnConfig.setOnClickListener(v -> configListener.onConfigClick(actividad));
+            }
             pasadaHolder.itemView.setOnClickListener(v -> clickListener.onActividadClick(actividad));
         }
     }
@@ -338,6 +359,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         Button btnVerDetallesPromocionada;
         Button btnAsistirPromocionada;
         ImageButton btnCompartirPromocionada;
+        ImageButton btnConfig;
 
         public PromocionadaViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -345,6 +367,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             ivActividadImagenPromocionada = itemView.findViewById(R.id.ivActividadImagenPromocionada);
             btnVerDetallesPromocionada = itemView.findViewById(R.id.btnVerDetallesPromocionada);
             btnAsistirPromocionada = itemView.findViewById(R.id.btnAsistirPromocionada);
+            btnConfig = itemView.findViewById(R.id.btnConfig);
         }
     }
 
@@ -354,6 +377,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         ImageButton btnCompartir;
         Button btnVerDetalles;
         Button btnAsistirActividad;
+        ImageButton btnConfig;
 
         public ActividadViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -362,6 +386,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             btnCompartir = itemView.findViewById(R.id.btnCompartir);
             btnVerDetalles = itemView.findViewById(R.id.btnVerDetalles);
             btnAsistirActividad = itemView.findViewById(R.id.btnAsistirActividad);
+            btnConfig = itemView.findViewById(R.id.btnConfig);
         }
     }
 
@@ -371,6 +396,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         Button btnVerDetalles;
         Button btnCancelarAsistencia;
         ImageButton btnCompartir;
+        ImageButton btnConfig;
 
         public AsistirViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -379,6 +405,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             btnVerDetalles = itemView.findViewById(R.id.btnVerDetalles);
             btnCancelarAsistencia = itemView.findViewById(R.id.btnCancelarAsistencia);
             btnCompartir = itemView.findViewById(R.id.btnCompartir);
+            btnConfig = itemView.findViewById(R.id.btnConfig);
         }
     }
 
@@ -386,12 +413,14 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         TextView tvTituloActividadPasada;
         ImageView ivActividadImagenPasada;
         Button btnVerDetallesPasada;
+        ImageButton btnConfig;
 
         public PasadaViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTituloActividadPasada = itemView.findViewById(R.id.tvTituloActividadUsuario);
             ivActividadImagenPasada = itemView.findViewById(R.id.ivActividadImagenUsuario);
             btnVerDetallesPasada = itemView.findViewById(R.id.btnVerDetallesUsuario);
+            btnConfig = itemView.findViewById(R.id.btnConfig);
         }
     }
 }

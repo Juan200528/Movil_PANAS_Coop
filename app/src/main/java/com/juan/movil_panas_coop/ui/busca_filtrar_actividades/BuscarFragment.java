@@ -25,11 +25,13 @@ import com.juan.movil_panas_coop.db.ManagerDb;
 import com.juan.movil_panas_coop.model.Actividad;
 import com.juan.movil_panas_coop.model.Asistente;
 import com.juan.movil_panas_coop.model.BuscarAdapter;
+import com.juan.movil_panas_coop.ui.recordatorio.RecordatorioFragment;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BuscarFragment extends Fragment implements BuscarAdapter.OnActividadClickListener,
-        BuscarAdapter.OnDetallesClickListener, BuscarAdapter.OnAsistirClickListener {
+        BuscarAdapter.OnDetallesClickListener, BuscarAdapter.OnAsistirClickListener,
+        BuscarAdapter.OnConfigClickListener {
 
     private EditText etBuscar;
     private RadioGroup rgFechaSeleccionada, rgEstadoSeleccionado;
@@ -68,10 +70,16 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
         }
 
         actividadList = new ArrayList<>();
-        buscarAdapter = new BuscarAdapter(actividadList, this, this, this, userId);
+        buscarAdapter = new BuscarAdapter(actividadList, this, this, this, this, userId);
         buscarAdapter.setManagerDb(managerDb);
         recyclerViewActividades.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewActividades.setAdapter(buscarAdapter);
+
+        // Habilitar desplazamiento y ajuste dinámico
+        recyclerViewActividades.setNestedScrollingEnabled(true);
+        recyclerViewActividades.setHasFixedSize(false);
+        recyclerViewActividades.setClipToPadding(false);
+        recyclerViewActividades.setClipChildren(false);
 
         // Inicializar ViewModel
         viewModel = new ViewModelProvider(this).get(BuscarViewModel.class);
@@ -88,6 +96,7 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
                 fechaFiltro = "Pasadas";
             }
             viewModel.setFechaFiltro(fechaFiltro);
+            viewModel.buscarActividades(etBuscar.getText().toString().trim(), ""); // Refrescar al cambiar filtro
             Log.d("BuscarFragment", "Fecha seleccionada: " + fechaFiltro);
         });
         rbFechaTodas.setChecked(true);
@@ -101,6 +110,7 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
                 estadoFiltro = "Promocionadas";
             }
             viewModel.setEstadoFiltro(estadoFiltro);
+            viewModel.buscarActividades(etBuscar.getText().toString().trim(), ""); // Refrescar al cambiar filtro
             Log.d("BuscarFragment", "Estado seleccionado: " + estadoFiltro);
         });
         rbEstadoTodas.setChecked(true);
@@ -128,6 +138,20 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
 
     private void ajustarAlturaRecyclerView() {
         if (recyclerViewActividades != null && recyclerViewActividades.getAdapter() != null) {
+            // Usar WRAP_CONTENT como altura predeterminada
+            ViewGroup.LayoutParams params = recyclerViewActividades.getLayoutParams();
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            recyclerViewActividades.setLayoutParams(params);
+
+            // Calcular altura basada en el diseño más alto (600dp para pasadas)
+            float dpToPx = getResources().getDisplayMetrics().density;
+            int maxItemHeight = (int) (600 * dpToPx); // Altura de la imagen en item_actividad_usuario.xml
+            int marginPadding = (int) (106 * dpToPx); // Márgenes y padding estimados (8dp + 18dp)
+
+            // Estimar altura total considerando el diseño más alto
+            int totalHeight = actividadList.size() * (maxItemHeight + marginPadding);
+
+            // Obtener altura usable de la pantalla
             DisplayMetrics displayMetrics = new DisplayMetrics();
             requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenHeight = displayMetrics.heightPixels;
@@ -135,20 +159,8 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
             int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height);
             int usableHeight = screenHeight - navigationBarHeight - bottomNavHeight;
 
-            float dpToPx = getResources().getDisplayMetrics().density;
-            int activityItemHeight = (int) (150 * dpToPx); // Altura estimada por tarjeta de actividad
-            int marginPadding = (int) (16 * dpToPx); // Margen/padding estimado entre ítems
-
-            int totalHeight = actividadList.size() * (activityItemHeight + marginPadding);
-
-            int maxHeight = usableHeight;
-            totalHeight = Math.min(totalHeight, maxHeight);
-
-            ViewGroup.LayoutParams params = recyclerViewActividades.getLayoutParams();
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            recyclerViewActividades.setLayoutParams(params);
+            // Asegurar desplazamiento si excede la altura usable
             recyclerViewActividades.setNestedScrollingEnabled(totalHeight > usableHeight);
-            recyclerViewActividades.setClipToPadding(false);
         }
     }
 
@@ -173,6 +185,20 @@ public class BuscarFragment extends Fragment implements BuscarAdapter.OnActivida
     @Override
     public void onAsistirClick(Actividad actividad, int position) {
         mostrarDialogoAsistir(actividad, position);
+    }
+
+    @Override
+    public void onConfigClick(Actividad actividad) {
+        Bundle bundle = new Bundle();
+        bundle.putInt("activity_id", actividad.getId());
+        RecordatorioFragment recordatorioFragment = new RecordatorioFragment();
+        recordatorioFragment.setArguments(bundle);
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, recordatorioFragment) // Cambiado a fragment_container
+                .addToBackStack(null)
+                .commit();
+        Log.d("BuscarFragment", "Navegando a RecordatorioFragment para actividad: " + actividad.getTitulo());
     }
 
     private void mostrarDialogoAsistir(Actividad actividad, int position) {

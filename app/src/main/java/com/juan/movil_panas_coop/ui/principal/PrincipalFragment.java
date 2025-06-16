@@ -101,20 +101,17 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
 
     private void adjustRecyclerViewMargin() {
         if (recyclerActividades != null) {
-            // Obtener la altura de la barra de navegación del sistema y la barra inferior
+            // Obtener la altura de la barra de navegación
             int navigationBarHeight = getNavigationBarHeight();
-            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height); // Asegúrate de definir esto en res/dimens
-            int totalBottomMargin = navigationBarHeight + bottomNavHeight; // Margen total inferior
-
             ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) recyclerActividades.getLayoutParams();
-            params.bottomMargin = totalBottomMargin; // Ajustar margen inferior al total
+            params.bottomMargin = navigationBarHeight + 150; // Mantener el margen inferior ajustado a 150
             recyclerActividades.setLayoutParams(params);
 
-            // Asegurar que el RecyclerView no se corte por la barra de navegación del sistema
+            // Asegurar que el RecyclerView no se corte por la barra de navegación
             ViewCompat.setOnApplyWindowInsetsListener(recyclerActividades, (v, insets) -> {
                 int insetBottom = insets.getSystemWindowInsetBottom();
                 if (insetBottom > 0) {
-                    params.bottomMargin = insetBottom + bottomNavHeight; // Ajustar con la barra inferior
+                    params.bottomMargin = insetBottom + 150;
                     recyclerActividades.setLayoutParams(params);
                 }
                 return insets.consumeSystemWindowInsets();
@@ -197,64 +194,47 @@ public class PrincipalFragment extends Fragment implements ActividadAdapter.OnAc
             requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenHeight = displayMetrics.heightPixels;
             int navigationBarHeight = getNavigationBarHeight();
-            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height);
-            int usableHeight = screenHeight - navigationBarHeight - bottomNavHeight; // Altura usable real
+            int usableHeight = screenHeight - navigationBarHeight;
 
-            // Factores de conversión
+            // Estimar la altura de los ítems
             float dpToPx = getResources().getDisplayMetrics().density;
-
-            // Alturas estimadas (en dp, luego convertidas a px)
-            int titleHeight = (int) (40 * dpToPx); // Altura estimada para títulos
-            int activityItemHeight = (int) (150 * dpToPx); // Altura estimada por tarjeta de actividad
-            int marginPadding = (int) (16 * dpToPx); // Margen/padding estimado entre ítems
+            int actividadItemHeight = (int) (150 * dpToPx) + 32; // 150dp por actividad + 16dp de margen superior + 16dp de margen inferior
+            int tituloSectionHeight = (int) (40 * dpToPx) + 16; // 40dp por título de sección + 8dp de margen superior + 8dp de margen inferior
 
             // Calcular la altura total del contenido
             int totalHeight = 0;
-            int activityCount = 0;
-            int pastActivityCount = 0;
+            int actividadCount = 0;
+            int pasadasCount = 0;
+            boolean hasPasadasSection = false;
 
             for (ActividadAdapter.Item item : itemList) {
-                if (item.getType() == ActividadAdapter.Item.TYPE_TITULO) {
-                    totalHeight += titleHeight + marginPadding;
-                } else if (item.getType() == ActividadAdapter.Item.TYPE_ACTIVIDAD) {
-                    activityCount++;
+                if (item.getType() == ActividadAdapter.Item.TYPE_ACTIVIDAD) {
+                    actividadCount++;
+                } else if (item.getType() == ActividadAdapter.Item.TYPE_TITULO) {
+                    totalHeight += tituloSectionHeight;
+                    hasPasadasSection = true;
                 } else if (item.getType() == ActividadAdapter.Item.TYPE_PASADAS) {
                     List<Actividad> actividadesPasadas = item.getActividadesPasadas();
                     if (actividadesPasadas != null) {
-                        pastActivityCount = actividadesPasadas.size();
+                        pasadasCount = actividadesPasadas.size();
                     }
                 }
             }
 
-            totalHeight += activityCount * (activityItemHeight + marginPadding);
-            totalHeight += pastActivityCount * (activityItemHeight + marginPadding);
+            totalHeight += actividadCount * actividadItemHeight; // Altura de actividades no pasadas
+            totalHeight += pasadasCount * actividadItemHeight; // Altura de actividades pasadas
 
-            // Ajustar la altura máxima para evitar desbordamiento
-            int maxHeight = usableHeight; // Usar toda la altura usable
-            totalHeight = Math.min(totalHeight, maxHeight);
-
-            ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
-            params.height = ViewGroup.LayoutParams.MATCH_PARENT; // Usar toda la altura disponible
-            recyclerActividades.setLayoutParams(params);
-            recyclerActividades.setNestedScrollingEnabled(totalHeight > usableHeight); // Habilitar scroll solo si excede
-
-            // Ajustar el RecyclerView anidado para actividades pasadas
-            for (int i = 0; i < itemList.size(); i++) {
-                if (itemList.get(i).getType() == ActividadAdapter.Item.TYPE_PASADAS) {
-                    View view = recyclerActividades.getChildAt(i);
-                    if (view instanceof RecyclerView) {
-                        RecyclerView nestedRecycler = (RecyclerView) view;
-                        if (nestedRecycler != null) {
-                            List<Actividad> actividadesPasadas = itemList.get(i).getActividadesPasadas();
-                            int nestedHeight = pastActivityCount * (activityItemHeight + marginPadding);
-                            ViewGroup.LayoutParams nestedParams = nestedRecycler.getLayoutParams();
-                            nestedParams.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Permitir que se ajuste al contenido
-                            nestedRecycler.setLayoutParams(nestedParams);
-                            nestedRecycler.setNestedScrollingEnabled(false); // Deshabilitar scroll anidado
-                            nestedRecycler.setClipToPadding(false); // Evitar recorte en los bordes
-                        }
-                    }
-                }
+            // Si hay una sección de actividades pasadas, ajustar el comportamiento
+            if (totalHeight <= usableHeight && actividadCount <= 1 && pasadasCount <= 1 && !hasPasadasSection) {
+                recyclerActividades.setNestedScrollingEnabled(false); // Deshabilitar scroll
+                ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT; // Ajustar altura al contenido
+                recyclerActividades.setLayoutParams(params);
+            } else {
+                recyclerActividades.setNestedScrollingEnabled(true); // Habilitar scroll
+                ViewGroup.LayoutParams params = recyclerActividades.getLayoutParams();
+                params.height = ViewGroup.LayoutParams.MATCH_PARENT; // Restaurar altura completa
+                recyclerActividades.setLayoutParams(params);
             }
         }
     }
