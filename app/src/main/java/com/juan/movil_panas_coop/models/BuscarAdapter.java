@@ -1,5 +1,6 @@
 package com.juan.movil_panas_coop.models;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -363,6 +364,7 @@ public class BuscarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         ImageButton btnConfig;
         Button btnCompartir;  // Agregamos la declaración del botón
 
+        @SuppressLint("WrongViewCast")
         public AsistirViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTituloActividad = itemView.findViewById(R.id.tvTituloActividadAsistir);

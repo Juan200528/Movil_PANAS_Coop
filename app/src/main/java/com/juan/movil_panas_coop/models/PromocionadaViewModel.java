@@ -45,7 +45,7 @@ public class PromocionadaViewModel extends ViewModel {
 
     public void cargarActividadesPromocionadas() {
         isLoading.setValue(true);
-        String token = sessionManager.getAuthToken();
+        String token = sessionManager.getToken();
 
         apiService.getPromotedTasks("Bearer " + token).enqueue(new Callback<List<ActividadModel>>() {
             @Override
@@ -69,7 +69,7 @@ public class PromocionadaViewModel extends ViewModel {
 
     public void promocionarActividad(String actividadId) {
         isLoading.setValue(true);
-        String token = sessionManager.getAuthToken();
+        String token = sessionManager.getToken();
 
         apiService.promoteTask("Bearer " + token, actividadId).enqueue(new Callback<Void>() {
             @Override
