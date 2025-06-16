@@ -1,151 +1,252 @@
 package com.juan.movil_panas_coop.ui.busca_filtrar_actividades;
 
+import android.app.Dialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
+import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.models.Actividad;
+import com.juan.movil_panas_coop.model.ActividadModel;
+import com.juan.movil_panas_coop.models.Asistente;
 import com.juan.movil_panas_coop.models.BuscarAdapter;
+import com.juan.movil_panas_coop.ui.recordatorio.RecordatorioFragment;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class BuscarFragment extends Fragment implements BuscarAdapter.OnActividadClickListener,
-        BuscarAdapter.OnEliminarClickListener, BuscarAdapter.OnEditarClickListener {
+public class BuscarFragment extends Fragment implements
+        BuscarAdapter.OnActividadClickListener,
+        BuscarAdapter.OnDetallesClickListener,
+        BuscarAdapter.OnAsistirClickListener,
+        BuscarAdapter.OnConfigClickListener {
 
-    private EditText etBuscar, etLugar;
-    private Spinner tvFechaSeleccionada, tvEstadoSeleccionado;
+    private EditText etBuscar;
+    private RadioGroup rgFechaSeleccionada, rgEstadoSeleccionado;
+    private RadioButton rbFechaTodas, rbFechaProximas, rbFechaPasadas;
+    private RadioButton rbEstadoTodas, rbEstadoPromocionadas;
     private Button btnBuscar;
     private RecyclerView recyclerViewActividades;
     private BuscarAdapter buscarAdapter;
-    private List<Actividad> actividadList;
+    private List<ActividadModel> actividadList;
     private BuscarViewModel viewModel;
+    private ManagerDb managerDb;
+    private int userId;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_buscar, container, false);
 
+        // Inicialización de vistas
         etBuscar = view.findViewById(R.id.etBuscar);
-        etLugar = view.findViewById(R.id.etLugar);
-        tvFechaSeleccionada = view.findViewById(R.id.tvFechaSeleccionada);
-        tvEstadoSeleccionado = view.findViewById(R.id.tvEstadoSeleccionado);
+        rgFechaSeleccionada = view.findViewById(R.id.rgFechaSeleccionada);
+        rgEstadoSeleccionado = view.findViewById(R.id.rgEstadoSeleccionado);
+        rbFechaTodas = view.findViewById(R.id.rbFechaTodas);
+        rbFechaProximas = view.findViewById(R.id.rbFechaProximas);
+        rbFechaPasadas = view.findViewById(R.id.rbFechaPasadas);
+        rbEstadoTodas = view.findViewById(R.id.rbEstadoTodas);
+        rbEstadoPromocionadas = view.findViewById(R.id.rbEstadoPromocionadas);
         btnBuscar = view.findViewById(R.id.btnBuscar);
         recyclerViewActividades = view.findViewById(R.id.recyclerViewActividades);
 
+        // Inicializar ManagerDb y userId
+        managerDb = new ManagerDb(getContext());
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE);
+        userId = prefs.getInt("user_id", -1);
+
+        if (userId == -1) {
+            Toast.makeText(getContext(), "Error: Usuario no identificado", Toast.LENGTH_SHORT).show();
+            return view;
+        }
+
+        // Inicializar lista y adaptador
         actividadList = new ArrayList<>();
-        buscarAdapter = new BuscarAdapter(actividadList, this, this, this);
+        buscarAdapter = new BuscarAdapter(actividadList, this, this, this, this, userId);
+        buscarAdapter.setManagerDb(managerDb);
+
+        // Configurar RecyclerView
         recyclerViewActividades.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewActividades.setAdapter(buscarAdapter);
+        recyclerViewActividades.setNestedScrollingEnabled(true);
+        recyclerViewActividades.setHasFixedSize(false);
+        recyclerViewActividades.setClipToPadding(false);
+        recyclerViewActividades.setClipChildren(false);
 
         // Inicializar ViewModel
         viewModel = new ViewModelProvider(this).get(BuscarViewModel.class);
+        viewModel.init(getContext(), userId);
 
-        // Configurar Spinner para tvFechaSeleccionada
-        ArrayAdapter<String> fechaAdapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_spinner_item, new String[]{"Todas", "Próximas", "Pasadas"});
-        fechaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        tvFechaSeleccionada.setAdapter(fechaAdapter);
-        tvFechaSeleccionada.setSelection(0);
-        tvFechaSeleccionada.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                String fechaFiltro = parent.getItemAtPosition(position).toString();
-                viewModel.setFechaFiltro(fechaFiltro);
-            }
-
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                // No hacer nada
-            }
-        });
-        Log.d("BuscarFragment", "Spinner tvFechaSeleccionada configurado con opciones: Todas, Próximas, Pasadas");
-
-        // Configurar Spinner para tvEstadoSeleccionado
-        ArrayAdapter<String> estadoAdapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_spinner_item, new String[]{"Todas", "Promocionadas"});
-        estadoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        tvEstadoSeleccionado.setAdapter(estadoAdapter);
-        tvEstadoSeleccionado.setSelection(0);
-        tvEstadoSeleccionado.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                String estadoFiltro = parent.getItemAtPosition(position).toString();
-                viewModel.setEstadoFiltro(estadoFiltro);
-            }
-
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                // No hacer nada
-            }
-        });
-        Log.d("BuscarFragment", "Spinner tvEstadoSeleccionado configurado con opciones: Todas, Promocionadas");
-
-        // Configurar el botón btnBuscar para realizar la búsqueda solo si hay datos
+        // Configurar botón de búsqueda
         btnBuscar.setOnClickListener(v -> {
             String query = etBuscar.getText().toString().trim();
-            String lugar = etLugar.getText().toString().trim();
-
-            if (query.isEmpty() && lugar.isEmpty()) {
-                actividadList.clear();
-                buscarAdapter.notifyDataSetChanged();
-                Log.d("BuscarFragment", "No se realizó búsqueda: Campos vacíos");
-                Toast.makeText(getContext(), "Ingresa un criterio de búsqueda", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.d("BuscarFragment", "Realizando búsqueda. Query: " + query + ", Lugar: " + lugar +
-                        ", Fecha: " + viewModel.getFechaFiltro().getValue() + ", Estado: " + viewModel.getEstadoFiltro().getValue());
-                viewModel.buscarActividades(query, lugar);
-            }
+            String filtroFecha = obtenerFiltroFecha();
+            String filtroEstado = obtenerFiltroEstado();
+            viewModel.buscarActividades(query, filtroFecha, filtroEstado);
         });
 
-        // Desactivar la observación automática inicial
+        // Observar cambios en LiveData
         viewModel.getActividades().observe(getViewLifecycleOwner(), actividades -> {
+            actividadList.clear();
             if (actividades != null) {
-                actividadList.clear();
                 actividadList.addAll(actividades);
                 buscarAdapter.notifyDataSetChanged();
-                Log.d("BuscarFragment", "Actividades actualizadas: " + actividades.size());
-                for (Actividad actividad : actividades) {
-                    Log.d("BuscarFragment", "Actividad: " + actividad.getTitulo() + ", Fecha: " + actividad.getFecha() + ", Pasada: " + actividad.isPasada());
-                }
             }
         });
+    }
 
-        // Inicialmente limpiar la lista para evitar que se muestren datos previos
-        actividadList.clear();
-        buscarAdapter.notifyDataSetChanged();
+    private String obtenerFiltroFecha() {
+        if (rbFechaTodas.isChecked()) return "todas";
+        if (rbFechaProximas.isChecked()) return "proximas";
+        if (rbFechaPasadas.isChecked()) return "pasadas";
+        return "todas";
+    }
+
+    private String obtenerFiltroEstado() {
+        if (rbEstadoTodas.isChecked()) return "todas";
+        if (rbEstadoPromocionadas.isChecked()) return "promocionadas";
+        return "todas";
+    
+            }
+            buscarAdapter.notifyDataSetChanged();
+            ajustarAlturaRecyclerView();
+            Log.d("BuscarFragment", "Actividades actualizadas: " + actividadList.size());
+        });
 
         return view;
     }
 
-    @Override
-    public void onActividadClick(Actividad actividad) {
-        Log.d("BuscarFragment", "Clic en actividad: " + actividad.getTitulo());
+    private void ajustarAlturaRecyclerView() {
+        if (recyclerViewActividades != null && recyclerViewActividades.getAdapter() != null) {
+            ViewGroup.LayoutParams params = recyclerViewActividades.getLayoutParams();
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            recyclerViewActividades.setLayoutParams(params);
+
+            float dpToPx = getResources().getDisplayMetrics().density;
+            int maxItemHeight = (int) (600 * dpToPx); // Altura de item pasadas
+            int marginPadding = (int) (106 * dpToPx); // Márgenes estimados
+            int totalHeight = actividadList.size() * (maxItemHeight + marginPadding);
+
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int screenHeight = displayMetrics.heightPixels;
+            int navigationBarHeight = getNavigationBarHeight();
+            int bottomNavHeight = getResources().getDimensionPixelSize(R.dimen.bottom_navigation_height);
+            int usableHeight = screenHeight - navigationBarHeight - bottomNavHeight;
+
+            recyclerViewActividades.setNestedScrollingEnabled(totalHeight > usableHeight);
+        }
+    }
+
+    private int getNavigationBarHeight() {
+        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        return resourceId > 0 ? getResources().getDimensionPixelSize(resourceId) : 0;
     }
 
     @Override
-    public void onEliminarClick(Actividad actividad) {
-        Log.d("BuscarFragment", "Eliminar actividad: " + actividad.getTitulo());
-        ManagerDb db = new ManagerDb(getContext());
-        db.open();
-        db.eliminarActividad(actividad.getId());
-        db.close();
-        viewModel.buscarActividades(etBuscar.getText().toString().trim(), etLugar.getText().toString().trim()); // Actualizar búsqueda
+    public void onActividadClick(ActividadModel actividad) {
+        Log.d("BuscarFragment", "Clic en actividad: " + actividad.getTitle());
     }
 
     @Override
-    public void onEditarClick(Actividad actividad) {
-        Log.d("BuscarFragment", "Editar actividad: " + actividad.getTitulo());
+    public void onDetallesClick(ActividadModel actividad) {
+        Log.d("BuscarFragment", "Ver detalles de actividad: " + actividad.getTitle());
+    }
+
+    @Override
+    public void onAsistirClick(ActividadModel actividad, int position) {
+        mostrarDialogoAsistir(actividad, position);
+    }
+
+    @Override
+    public void onConfigClick(ActividadModel actividad) {
+        Bundle bundle = new Bundle();
+        bundle.putString("activity_id", actividad.getId());
+
+        RecordatorioFragment recordatorioFragment = new RecordatorioFragment();
+        recordatorioFragment.setArguments(bundle);
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, recordatorioFragment)
+                .addToBackStack(null)
+                .commit();
+
+        Log.d("BuscarFragment", "Navegando a RecordatorioFragment para: " + actividad.getTitle());
+    }
+
+    private void mostrarDialogoAsistir(ActividadModel actividad, int position) {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.setContentView(R.layout.dialogo_asistir);
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        EditText etNombreCompleto = dialog.findViewById(R.id.etNombreAsistir);
+        EditText etEmail = dialog.findViewById(R.id.etEmailAsistir);
+        Button btnConfirmar = dialog.findViewById(R.id.btnConfirmar);
+        Button btnCancelar = dialog.findViewById(R.id.btnCancelar);
+        ImageView ivCerrar = dialog.findViewById(R.id.ivCerrar);
+
+        managerDb.open();
+        String[] datosUsuario = managerDb.obtenerDatosUsuarioPorId(userId);
+        if (datosUsuario != null) {
+            etNombreCompleto.setText(datosUsuario[1] != null ? datosUsuario[1] : "");
+            etEmail.setText(datosUsuario[2] != null ? datosUsuario[2] : "");
+        }
+        managerDb.close();
+
+        btnConfirmar.setOnClickListener(v -> {
+            String nombreCompleto = etNombreCompleto.getText().toString().trim();
+            String email = etEmail.getText().toString().trim();
+
+            if (!nombreCompleto.isEmpty() && !email.isEmpty()) {
+                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    Toast.makeText(getContext(), "Correo inválido", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                managerDb.open();
+                Asistente asistente = new Asistente();
+                asistente.setIdAsistente(userId);
+                asistente.setIdActividad(Integer.parseInt(actividad.getId()));
+                asistente.setNombreCompleto(nombreCompleto);
+                asistente.setCorreo(email);
+                asistente.setActividadNombre(actividad.getTitle());
+
+                long result = managerDb.insertarAsistente(asistente);
+                if (result != -1) {
+                    actividad.setAsistido(true);
+                    buscarAdapter.notifyItemChanged(position);
+                    Toast.makeText(getContext(), "Asistencia confirmada", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getContext(), "Error al registrar asistencia", Toast.LENGTH_SHORT).show();
+                }
+
+                managerDb.close();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Completa todos los campos", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnCancelar.setOnClickListener(v -> dialog.dismiss());
+        ivCerrar.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 }

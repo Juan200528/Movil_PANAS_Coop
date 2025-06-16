@@ -30,4 +30,7 @@
     <color name="colorPrimarySolidario">#FF4CAF50</color>
     <color name="colorAccentSolidario">#FF8BC34A</color>
 
+    <color name="colorPrimary">#3F51B5</color> <!-- Ejemplo de color primario (puedes ajustarlo) -->
+    <color name="colorAccent">#FF4081</color> <!-- Ejemplo de color de acento -->
+
 </resources>

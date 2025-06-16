@@ -33,8 +33,8 @@ public class FragmentActPanel extends Fragment {
         cardPromocionadas = view.findViewById(R.id.card_actividades_promocionadas);
         cardRecordatorio = view.findViewById(R.id.card_recordatorio);
 
-        cardBuscarFiltrar.setOnClickListener(v -> abrirFragmento(new BuscarFragment()));
-        cardListaActividades.setOnClickListener(v -> abrirFragmento(new ListaFragment()));
+        cardBuscarFiltrar.setOnClickListener(v -> abrirFragmento(new BuscarFragment())); //Poner fragment de gestionar
+        cardListaActividades.setOnClickListener(v -> abrirFragmento(new BuscarFragment()));
         cardPromocionadas.setOnClickListener(v -> abrirFragmento(new PromocionadasFragment()));
         cardRecordatorio.setOnClickListener(v -> abrirFragmento(new RecordatorioFragment()));
 

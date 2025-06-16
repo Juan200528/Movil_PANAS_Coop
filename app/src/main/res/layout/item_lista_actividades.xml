@@ -16,7 +16,18 @@
                 <Button android:id="@+id/btnAsistirActividad" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:text="Asistir a actividad" android:textColor="#22C55E" app:backgroundTint="#ffff"/>
             </LinearLayout>
             <!--  Botones de acción (compartir)  -->
-            <ImageButton android:id="@+id/btnCompartir" android:layout_width="34dp" android:layout_height="wrap_content" android:layout_marginStart="2dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Compartir" android:scaleType="fitCenter" android:src="@drawable/compartir"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Switch
+                    android:id="@+id/switchPromocionar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Promocionar"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

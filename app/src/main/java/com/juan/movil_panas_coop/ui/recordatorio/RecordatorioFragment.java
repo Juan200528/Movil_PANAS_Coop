@@ -1,191 +1,229 @@
 package com.juan.movil_panas_coop.ui.recordatorio;
 
-import android.content.SharedPreferences;
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.juan.movil_panas_coop.R;
 import com.juan.movil_panas_coop.db.ManagerDb;
-import com.juan.movil_panas_coop.models.Actividad;
-import com.juan.movil_panas_coop.models.Notificacion;
-import com.juan.movil_panas_coop.models.NotificacionAdapter;
-import java.text.ParseException;
+import com.juan.movil_panas_coop.model.Notificacion;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
 public class RecordatorioFragment extends Fragment {
 
-    private RecordatorioViewModel viewModel;
-    private EditText etTituloActividad, etDiasActividad;
-    private Button btnGuardarConfig;
-    private LinearLayout containerConfig;
-    private RecyclerView recyclerView;
-    private NotificacionAdapter notificacionAdapter;
-    private List<Notificacion> notificacionList;
-    private int userId;
-    private int activityId = -1;
+    private RecyclerView recyclerViewNotifications;
+    private NotificationAdapter adapter;
+    private List<Notificacion> notificationList;
     private ManagerDb managerDb;
+    private int activityId = -1;
+    private String activityDate;
+    private String activityTitle;
+    private int userId;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_recordatorio, container, false);
+        View view = inflater.inflate(R.layout.fragment_recordatorio, container, false);
 
-        // Inicializar ManagerDb
+        // Initialize RecyclerView
+        recyclerViewNotifications = view.findViewById(R.id.recycler_view_notifications);
+        if (recyclerViewNotifications != null) {
+            recyclerViewNotifications.setLayoutManager(new LinearLayoutManager(getContext()));
+        } else {
+            Toast.makeText(getContext(), "Error: RecyclerView no encontrado", Toast.LENGTH_SHORT).show();
+        }
+
+        // Initialize database and data
         managerDb = new ManagerDb(getContext());
-
-        // Obtener userId
-        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", requireContext().MODE_PRIVATE);
-        userId = prefs.getInt("user_id", -1);
-        if (userId == -1) {
-            Toast.makeText(getContext(), "Error: Usuario no identificado", Toast.LENGTH_SHORT).show();
-            return root;
+        notificationList = new ArrayList<>();
+        adapter = new NotificationAdapter(notificationList);
+        if (recyclerViewNotifications != null) {
+            recyclerViewNotifications.setAdapter(adapter);
         }
 
-        // Obtener activityId si se pasó
-        if (getArguments() != null) {
-            activityId = getArguments().getInt("activity_id", -1);
+        // Get arguments
+        Bundle args = getArguments();
+        if (savedInstanceState != null) {
+            activityId = savedInstanceState.getInt("activity_id", -1);
+            activityDate = savedInstanceState.getString("activity_date");
+            activityTitle = savedInstanceState.getString("activity_title");
+            userId = savedInstanceState.getInt("user_id", -1);
+        } else if (args != null) {
+            activityId = args.getInt("activity_id", -1);
+            activityDate = args.getString("activity_date");
+            activityTitle = args.getString("activity_title");
+            userId = args.getInt("user_id", -1);
         }
-
-        // Inicializar vistas
-        etTituloActividad = root.findViewById(R.id.etTituloActividad);
-        etDiasActividad = root.findViewById(R.id.etDiasActividad);
-        btnGuardarConfig = root.findViewById(R.id.btnGuardarConfig);
-        containerConfig = root.findViewById(R.id.containerConfig);
-
-        // Configurar RecyclerView
-        notificacionList = new ArrayList<>();
-        notificacionAdapter = new NotificacionAdapter(notificacionList, managerDb);
-        recyclerView = new RecyclerView(requireContext());
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(notificacionAdapter);
-        containerConfig.addView(recyclerView);
-
-        // Inicializar ViewModel
-        viewModel = new ViewModelProvider(this).get(RecordatorioViewModel.class);
-
-        // Cargar título de la actividad si se pasó activityId
-        if (activityId != -1) {
+        if (activityId != -1 && activityDate != null && userId != -1) {
             managerDb.open();
-            Actividad actividad = managerDb.obtenerActividades().stream()
-                    .filter(a -> a.getId() == activityId)
-                    .findFirst().orElse(null);
-            if (actividad != null) {
-                etTituloActividad.setText(actividad.getTitulo());
-                etTituloActividad.setEnabled(false); // No editable
-            }
+            notificationList.addAll(managerDb.obtenerNotificacionesPorUsuario(userId));
+            notificationList.removeIf(n -> n.getIdActividad() != activityId);
             managerDb.close();
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+            if (activityTitle != null) {
+                Toast.makeText(getContext(), "Actividad asistida: " + activityTitle, Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getContext(), "Datos incompletos", Toast.LENGTH_SHORT).show();
         }
 
-        // Observar cambios en las notificaciones
-        viewModel.getNotificaciones().observe(getViewLifecycleOwner(), notificaciones -> {
-            notificacionList.clear();
-            notificacionList.addAll(notificaciones);
-            notificacionAdapter.notifyDataSetChanged();
-        });
+        // Check for a button to add notifications
+        Button btnAddNotification = view.findViewById(R.id.btnConfig);
+        if (btnAddNotification != null) {
+            btnAddNotification.setOnClickListener(v -> showAddNotificationDialog());
+        }
 
-        // Cargar notificaciones iniciales
-        viewModel.cargarNotificaciones(userId);
-
-        // Configurar botón de guardar
-        btnGuardarConfig.setOnClickListener(v -> guardarConfiguracion());
-
-        return root;
+        return view;
     }
 
-    private void guardarConfiguracion() {
-        String titulo = etTituloActividad.getText().toString().trim();
-        String diasStr = etDiasActividad.getText().toString().trim();
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("activity_id", activityId);
+        outState.putString("activity_date", activityDate);
+        outState.putString("activity_title", activityTitle);
+        outState.putInt("user_id", userId);
+    }
 
-        if (titulo.isEmpty()) {
-            etTituloActividad.setError("El título es obligatorio");
-            return;
-        }
-        if (diasStr.isEmpty()) {
-            etDiasActividad.setError("Los días son obligatorios");
-            return;
-        }
+    private void showAddNotificationDialog() {
+        Dialog dialog = new Dialog(requireContext());
+        dialog.setContentView(R.layout.dialogo_asistir);
 
-        int dias;
-        try {
-            dias = Integer.parseInt(diasStr);
-            if (dias <= 0) {
-                etDiasActividad.setError("Los días deben ser mayores a 0");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            etDiasActividad.setError("Ingresa un número válido");
-            return;
-        }
+        // IDs según dialogo_asistir.xml
+        EditText etDaysBefore = dialog.findViewById(R.id.etDiasActividad);
+        Button btnSave = dialog.findViewById(R.id.btnGuardarConfig);
+        Button btnCancel = dialog.findViewById(R.id.btnCancelar);
 
-        managerDb.open();
-        Actividad actividad = managerDb.obtenerActividades().stream()
-                .filter(a -> a.getTitulo().equals(titulo) && (activityId == -1 || a.getId() == activityId))
-                .findFirst().orElse(null);
+        if (etDaysBefore != null && btnSave != null && btnCancel != null) {
+            etDaysBefore.setHint("Días antes de la actividad");
+            etDaysBefore.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
 
-        if (actividad == null) {
-            Toast.makeText(getContext(), "Actividad no encontrada", Toast.LENGTH_SHORT).show();
-            managerDb.close();
-            return;
-        }
-
-        // Validar días máximos
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        try {
-            Date fechaActividad = sdf.parse(actividad.getFecha());
-            Date today = new Date();
-            long diffInMillies = fechaActividad.getTime() - today.getTime();
-            long diasMaximos = diffInMillies / (1000 * 60 * 60 * 24);
-            if (dias > diasMaximos) {
-                etDiasActividad.setError("Los días no pueden exceder " + diasMaximos);
-                managerDb.close();
-                return;
-            }
-
-            Notificacion notificacion = new Notificacion();
-            notificacion.setMensaje("La actividad " + titulo + " está a punto de terminar.");
-            notificacion.setFecha(actividad.getFecha());
-            notificacion.setIdUsuario(userId);
-            notificacion.setDias(dias);
-            notificacion.setDiasRestantes(dias);
-            notificacion.setNombreActividad(titulo);
-            notificacion.setDiasActividad((int) diasMaximos);
-            notificacion.setIdActividad(actividad.getId());
-
-            // Verificar si ya existe una notificación para este usuario y actividad
-            if (managerDb.existeNotificacion(userId, actividad.getId())) {
-                // Actualizar la notificación existente
-                int idNotificacion = managerDb.obtenerIdNotificacion(userId, actividad.getId());
-                if (idNotificacion != -1) {
-                    notificacion.setId(idNotificacion);
-                    managerDb.actualizarNotificacion(notificacion);
-                    Toast.makeText(getContext(), "Notificación actualizada", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getContext(), "Error al actualizar notificación", Toast.LENGTH_SHORT).show();
+            btnSave.setOnClickListener(v -> {
+                String daysBeforeStr = etDaysBefore.getText().toString().trim();
+                if (daysBeforeStr.isEmpty()) {
+                    Toast.makeText(getContext(), "Ingresa la cantidad de días", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-            } else {
-                // Insertar una nueva notificación
-                viewModel.insertarNotificacion(notificacion);
-                Toast.makeText(getContext(), "Notificación guardada", Toast.LENGTH_SHORT).show();
-            }
 
-            etDiasActividad.setText("");
-        } catch (ParseException e) {
-            Toast.makeText(getContext(), "Error en la fecha de la actividad", Toast.LENGTH_SHORT).show();
-        } finally {
-            managerDb.close();
+                int daysBefore;
+                try {
+                    daysBefore = Integer.parseInt(daysBeforeStr);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getContext(), "Ingresa un número válido", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                Calendar calendar = Calendar.getInstance();
+                try {
+                    calendar.setTime(sdf.parse(activityDate));
+                    calendar.add(Calendar.DAY_OF_MONTH, -daysBefore);
+                    String notificationDate = sdf.format(calendar.getTime());
+
+                    managerDb.open();
+                    if (managerDb.existeNotificacion(userId, activityId)) {
+                        Toast.makeText(getContext(), "Ya existe una notificación para esta actividad", Toast.LENGTH_SHORT).show();
+                        managerDb.close();
+                        dialog.dismiss();
+                        return;
+                    }
+
+                    Notificacion notificacion = new Notificacion();
+                    notificacion.setMensaje("Recordatorio: " + activityTitle);
+                    notificacion.setFecha(notificationDate);
+                    notificacion.setIdUsuario(userId);
+                    notificacion.setDias(daysBefore);
+                    notificacion.setDiasRestantes(daysBefore);
+                    notificacion.setNombreActividad(activityTitle);
+                    notificacion.setDiasActividad(daysBefore);
+                    notificacion.setIdActividad(activityId);
+
+                    long result = managerDb.insertarNotificacion(notificacion);
+                    if (result != -1) {
+                        notificacion.setId((int) result);
+                        notificationList.add(notificacion);
+                        if (adapter != null) {
+                            adapter.notifyItemInserted(notificationList.size() - 1);
+                        }
+                        Toast.makeText(getContext(), "Notificación añadida para: " + activityTitle, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Error al añadir notificación", Toast.LENGTH_SHORT).show();
+                    }
+                    managerDb.close();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), "Fecha de actividad inválida", Toast.LENGTH_SHORT).show();
+                }
+                dialog.dismiss();
+            });
+
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+            dialog.show();
+        } else {
+            Toast.makeText(getContext(), "Error: Diálogo no configurado correctamente", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.ViewHolder> {
+        private List<Notificacion> notifications;
+
+        public NotificationAdapter(List<Notificacion> notifications) {
+            this.notifications = notifications;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_configuracion, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Notificacion notificacion = notifications.get(position);
+            holder.tvTituloActividad.setText(notificacion.getNombreActividad());
+            holder.tvFechaActividad.setText(notificacion.getFecha());
+            holder.tvLugarActividad.setText(String.format(Locale.getDefault(), "%d días antes", notificacion.getDias()));
+            holder.itemView.setOnLongClickListener(v -> {
+                managerDb.open();
+                managerDb.eliminarNotificacion(notificacion.getId());
+                managerDb.close();
+                notifications.remove(position);
+                if (adapter != null) {
+                    notifyItemRemoved(position);
+                }
+                Toast.makeText(getContext(), "Notificación eliminada", Toast.LENGTH_SHORT).show();
+                return true;
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return notifications.size();
+        }
+
+        class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvTituloActividad, tvFechaActividad, tvLugarActividad;
+
+            ViewHolder(View itemView) {
+                super(itemView);
+                tvTituloActividad = itemView.findViewById(R.id.tvTituloActividad);
+                tvFechaActividad = itemView.findViewById(R.id.tvFechaActividad);
+                tvLugarActividad = itemView.findViewById(R.id.tvLugarActividad);
+            }
         }
     }
 }

@@ -1,43 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@color/white">
+    android:layout_height="match_parent">
 
     <!-- Título "Mis Actividades" -->
     <TextView
         android:id="@+id/tvMisActividades"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_marginTop="16dp"
         android:text="MIS ACTIVIDADES"
-        android:textSize="22sp"/>
-
-    <!-- Mensaje cuando no hay actividades -->
-    <TextView
-        android:id="@+id/tvEmptyActividades"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:text="No tienes actividades"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
-        android:visibility="gone" />
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- RecyclerView para las actividades -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerActividades"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp"
-        android:clipToPadding="false"
-        android:clipChildren="false"
-        android:scrollbars="vertical"/>
+        android:clipToPadding="true"
+        android:paddingBottom="2dp"
+        android:layout_marginTop="60dp"
+        app:layout_constraintTop_toBottomOf="@id/tvMisActividades"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-</LinearLayout>
+    <!-- Texto para cuando no hay actividades -->
+    <TextView
+        android:id="@+id/tvEmptyActividades"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No hay actividades"
+        android:textSize="18sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

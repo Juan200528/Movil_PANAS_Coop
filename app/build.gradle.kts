@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("com.android.application")
 }
 
 android {
@@ -14,6 +14,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 👇 Habilita VectorDrawables
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -25,6 +28,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -39,6 +43,11 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.navigation.runtime.android)
     implementation(libs.firebase.inappmessaging)
+
+    // 👇 Agregar si usas RecyclerView o Navigation UI
+    implementation ("androidx.recyclerview:recyclerview:1.3.2")
+    implementation ("androidx.navigation:navigation-ui:2.7.7")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

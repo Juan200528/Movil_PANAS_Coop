@@ -1,7 +1,6 @@
 package com.juan.movil_panas_coop.model;
 
 import com.google.gson.annotations.SerializedName;
-
 import java.util.List;
 
 public class ActividadModel {
@@ -22,13 +21,16 @@ public class ActividadModel {
     private String date;
 
     @SerializedName("responsible")
-    private List<String> responsible; // Changed to List<String> for better handling
+    private List<String> responsible;
 
     @SerializedName("isPromoted")
     private boolean isPromoted;
 
     @SerializedName("promotion")
     private Promotion promotion;
+
+    // Nuevo campo local
+    private boolean asistido;
 
     // --- Getters and Setters ---
     public String getId() {
@@ -37,15 +39,6 @@ public class ActividadModel {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public class Promotion {
-        @SerializedName("startDate")
-        private String startDate;
-
-        @SerializedName("endDate")
-        private String endDate;
-        // Getters y Setters
     }
 
     public String getTitle() {
@@ -86,5 +79,54 @@ public class ActividadModel {
 
     public void setResponsible(List<String> responsible) {
         this.responsible = responsible;
+    }
+
+    public boolean isPromoted() {
+        return isPromoted;
+    }
+
+    public void setPromoted(boolean promoted) {
+        isPromoted = promoted;
+    }
+
+    public Promotion getPromotion() {
+        return promotion;
+    }
+
+    public void setPromotion(Promotion promotion) {
+        this.promotion = promotion;
+    }
+
+    public boolean isAsistido() {
+        return asistido;
+    }
+
+    public void setAsistido(boolean asistido) {
+        this.asistido = asistido;
+    }
+
+    // --- Clase interna Promotion ---
+    public static class Promotion {
+        @SerializedName("startDate")
+        private String startDate;
+
+        @SerializedName("endDate")
+        private String endDate;
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public void setStartDate(String startDate) {
+            this.startDate = startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public void setEndDate(String endDate) {
+            this.endDate = endDate;
+        }
     }
 }
